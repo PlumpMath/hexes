@@ -65,9 +65,10 @@ main = bracketGLFW $ do
         Right p -> return p
     glUseProgram prog
 
-    -- setup our verticies
-    let verticies = computeVerticies (rows,cols) (cellWidth,cellHeight)
-    let verticesSize = fromIntegral $ sizeOf (0.0 :: GLfloat) * (length verticies) * 3
+    -- setup our vertex data
+    let quadList = computeQuads (rows,cols) (cellWidth,cellHeight)
+    let verticies = normalizeQuads (rows,cols) (cellWidth,cellHeight) quadList :: [GLfloat]
+    let verticesSize = fromIntegral $ sizeOf (0.0 :: GLfloat) * (length verticies)
     verticesP <- newArray verticies
 
     -- setup a vertex array object
@@ -101,7 +102,7 @@ main = bracketGLFW $ do
                 glClear GL_COLOR_BUFFER_BIT
 
                 glBindVertexArray vao
-                glDrawArrays GL_POINTS 0 (fromIntegral (length verticies) * 3)
+                glDrawArrays GL_TRIANGLES 0 (fromIntegral $ length verticies)
                 glBindVertexArray 0
 
                 GLFW.swapBuffers window
@@ -109,17 +110,57 @@ main = bracketGLFW $ do
                 loop
     loop
 
-computeVerticies :: (Int, Int) -> (Int, Int) -> [V3 GLfloat]
-computeVerticies (rows,cols) (cellWidth,cellHeight) = do
-    let screenWidth = fromIntegral $ cols*cellWidth
-    let halfWidth = screenWidth / 2
-    let screenHeight = fromIntegral $ rows*cellHeight
-    let halfHeight = screenHeight / 2
-    row <- [0 .. rows]
-    col <- [0 .. cols]
-    let px = fromIntegral $ (col*cellWidth)
-    let pyOriginTop = fromIntegral $ (row*cellHeight)
-    let pyOriginBottom = screenHeight - pyOriginTop
-    let normpx = (px - halfWidth) / halfWidth
-    let normpyB = (pyOriginBottom - halfHeight) / halfHeight
-    return $ V3 normpx normpyB 0
+-- | The data to build a Quad, with coordinates in pixel space. Assumes that 0,0
+-- is the bottom left. When converting to 3d just give z the same value for all
+-- points.
+data PixelQuad = PixelQuad {
+    quadPoints :: [V2 Int]
+    -- Triangles will always use indexes (0,1,2) and (0,2,3)
+    } deriving Show
+
+-- | This doesn't give fully compact results, but it is good enough for now, and
+-- we won't have so many verticies that it'll make a huge difference that we
+-- compact it down anyway. Even though 24row*80col would be 2015 vertexes if
+-- fully compacted, this method is still only 7680 for the same size, which is
+-- so small that the GPU won't care.
+computeQuads :: (Int, Int) -> (Int, Int) -> [PixelQuad]
+computeQuads (rows,cols) (cellWidth,cellHeight) = do
+    let screenWidth = cols*cellWidth
+    let screenHeight = rows*cellHeight
+    row <- [0 .. (rows-1)]
+    col <- [0 .. (cols-1)]
+    let px0 = cellWidth * col
+    let px1 = cellWidth * (col+1)
+    let px2 = cellWidth * (col+1)
+    let px3 = cellWidth * col
+    let py0 = screenHeight - cellHeight * row
+    let py1 = screenHeight - cellHeight * row
+    let py2 = screenHeight - cellHeight * (row + 1)
+    let py3 = screenHeight - cellHeight * (row + 1)
+    return $ PixelQuad [V2 px0 py0,
+                        V2 px1 py1,
+                        V2 px2 py2,
+                        V2 px3 py3]
+
+-- | Converts PixelQuad data into the list of six vertexes needed to form the
+-- two triangles, normalizes the coordinates to fit into the screen space, and
+-- concats it all together.
+normalizeQuads :: (Int, Int) -> (Int, Int) -> [PixelQuad] -> [GLfloat]
+normalizeQuads (rows,cols) (cellWidth,cellHeight) quads = let
+    screenWidth = cols*cellWidth
+    screenHeight = rows*cellHeight
+    halfWidth = fromIntegral screenWidth / 2 :: GLfloat
+    halfHeight = fromIntegral screenHeight / 2 :: GLfloat
+    normalX x = (fromIntegral x - halfWidth) / halfWidth
+    normalY y = (fromIntegral y - halfHeight) / halfHeight
+    in concatMap (\(PixelQuad [(V2 ax ay),
+                               (V2 bx by),
+                               (V2 cx cy),
+                               (V2 dx dy)]) -> [
+                                   normalX ax, normalY ay, 0,
+                                   normalX bx, normalY by, 0,
+                                   normalX cx, normalY cy, 0,
+                                   normalX ax, normalY ay, 0,
+                                   normalX cx, normalY cy, 0,
+                                   normalX dx, normalY dy, 0
+            ]) quads
