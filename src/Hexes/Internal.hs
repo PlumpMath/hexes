@@ -88,9 +88,11 @@ data HexesState = HexesState {
     -- frame and writing the updates to that.
     }
 
+-- | Newtype for a quadruple of texture location data, @(s,t)@ coordinates.
 newtype TextureQuadruple = TextureQuadruple (V2 GLfloat,V2 GLfloat,V2 GLfloat,V2 GLfloat)
     deriving (Show, VSM.Storable)
 
+-- | Newtype for a quadruple of screen location data, @(x,y)@ coordinates.
 newtype ScreenQuadruple = ScreenQuadruple (V2 GLfloat,V2 GLfloat,V2 GLfloat,V2 GLfloat)
     deriving (Show, VSM.Storable)
 
@@ -209,7 +211,7 @@ initWindow = do
     mWin <- liftIO $ GLFW.createWindow fbWidth fbHeight "" Nothing Nothing
     window <- liftIO $ case mWin of
         -- TODO: Implement a real exception type that we can use with throwIO
-        Nothing -> error "FATAL: Could Not Create A Window!"
+        Nothing -> error "FATAL: Could not create a window!"
         Just window -> return window
     Hexes $ modify (\s -> s {window = window})
     liftIO $ GLFW.makeContextCurrent (Just window)
