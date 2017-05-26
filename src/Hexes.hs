@@ -1,37 +1,39 @@
 
-module Hexes where
+module Hexes (
+    Hexes(),
+    runHexes,
+    getRowColCount,
+    getCellWidthHeight,
+    setWindowTitle
+    ) where
 
--- base
-import Control.Exception (bracket)
-import Control.Monad (when)
-import System.Exit
-import Foreign
-import Foreign.C.String (withCAStringLen)
--- GLFW-b
-import qualified Graphics.UI.GLFW as GLFW
--- gl
-import Graphics.GL.Core33
-import Graphics.GL.Types
--- transformers
-import Control.Monad.Trans.Except
+import Hexes.Internal
 
--- | Ensures that we only run GLFW code while it's initialized, and also that we
--- always terminate it when we're done. Also, this function should only be used
--- from the main thread.
-bracketGLFW :: IO () -> IO ()
-bracketGLFW act = bracket GLFW.init (const GLFW.terminate) $ \initWorked ->
-    when initWorked act
+{-
 
--- | Assigns the normal window hints.
-glfwNormalHints :: IO ()
-glfwNormalHints = do
-    GLFW.windowHint (GLFW.WindowHint'ContextVersionMajor 3)
-    GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
-    GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
-    GLFW.windowHint (GLFW.WindowHint'Resizable False)
 
+vertexShaderSource :: String
+vertexShaderSource = [r|
+    #version 330 core
+    layout (location = 0) in vec2 position;
+    void main()
+    {
+        gl_Position = vec4(position.x, position.y, 1.0, 1.0);
+    }
+    |]
+
+fragmentShaderSource :: String
+fragmentShaderSource = [r|
+    #version 330 core
+    out vec4 color;
+    void main()
+    {
+        color = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+    }
+    |]
+    
 -- | Makes a GLFW Window... or dies trying. Also sets it to have the current
--- OpenGL context.
+-- OpenGL context and adjusts the viewport to use the entire window space.
 --
 -- The width and height are the desired width and height of the OGL framebuffer.
 -- The window itself will be slightly larger than that.
@@ -42,37 +44,41 @@ windowOrDie width height title = do
         Nothing -> die "Could not create a window!"
         Just window -> do
             GLFW.makeContextCurrent (Just window)
+            (fbx,fby) <- GLFW.getFramebufferSize window
+            if (fbx,fby) /= (width,height)
+                then die "Framebuffer obtained was the incorrect size"
+                else glViewport 0 0 (fromIntegral fbx) (fromIntegral fby)
             return window
 
 -- | Given a shader type and a shader source, it gives you (Right id) of the
 -- successfully compiled shader, or (Left err) with the error message. In the
 -- error case, the shader id is deleted before the function returns to avoid
 -- accidentally leaking shader objects.
-loadShader :: GLenum -> String -> IO (Either String GLuint)
+loadShader :: MonadIO m => GLenum -> String -> ExceptT String m GLuint
 loadShader shaderType source = do
     -- new shader object
     shaderID <- glCreateShader shaderType
     -- assign the source to the shader object
-    withCAStringLen source $ \(strP, strLen) ->
+    liftIO $ withCAStringLen source $ \(strP, strLen) ->
         withArray [strP] $ \linesPtrsPtr ->
             withArray [fromIntegral strLen] $ \lengthsPtr ->
                 glShaderSource shaderID 1 linesPtrsPtr lengthsPtr
     -- compile and check success
     glCompileShader shaderID
-    success <- alloca $ \successP -> do
+    success <- liftIO $ alloca $ \successP -> do
         glGetShaderiv shaderID GL_COMPILE_STATUS successP
         peek successP
     if success == GL_TRUE
         -- success: we're done
-        then return (Right shaderID)
+        then return shaderID
         -- failure: we get the log, delete the shader, and return the log.
         else do
             -- how many bytes the info log should be (including the '\0')
-            logLen <- alloca $ \logLenP -> do
+            logLen <- liftIO $ alloca $ \logLenP -> do
                 glGetShaderiv shaderID GL_INFO_LOG_LENGTH logLenP
                 peek logLenP
             -- space for the info log
-            logBytes <- allocaBytes (fromIntegral logLen) $ \logP -> do
+            logBytes <- liftIO $ allocaBytes (fromIntegral logLen) $ \logP -> do
                 -- space for the log reading result
                 alloca $ \resultP -> do
                     -- Try to obtain the log bytes
@@ -87,33 +93,31 @@ loadShader shaderType source = do
                     GL_GEOMETRY_SHADER -> "Geometry"
                     GL_FRAGMENT_SHADER -> "Fragment"
                     _ -> "Unknown Type"
-            return $ Left $
-                prefix ++ " Shader Error:" ++
-                    (map (toEnum.fromEnum) logBytes)
+            throwE $ prefix ++ " Shader Error:" ++ map (toEnum.fromEnum) logBytes
 
 -- | Given a vertex shader object and a fragment shader object, this will link
 -- them into a new program, giving you (Right id). If there's a linking error
 -- the error log is retrieved, the program deleted, and (Left err) is returned.
-linkProgram :: GLuint -> GLuint -> IO (Either String GLuint)
+linkProgram :: MonadIO m => GLuint -> GLuint -> ExceptT String m GLuint
 linkProgram vertexID fragmentID = do
     programID <- glCreateProgram
     glAttachShader programID vertexID
     glAttachShader programID fragmentID
     glLinkProgram programID
-    success <- alloca $ \successP -> do
+    success <- liftIO $ alloca $ \successP -> do
         glGetProgramiv programID GL_LINK_STATUS successP
         peek successP
     if success == GL_TRUE
         -- success: we're done
-        then return (Right programID)
+        then return programID
         -- failure: we get the log, delete the shader, and return the log.
         else do
             -- how many bytes the info log should be (including the '\0')
-            logLen <- alloca $ \logLenP -> do
+            logLen <- liftIO $ alloca $ \logLenP -> do
                 glGetProgramiv programID GL_INFO_LOG_LENGTH logLenP
                 peek logLenP
             -- space for the info log
-            logBytes <- allocaBytes (fromIntegral logLen) $ \logP -> do
+            logBytes <- liftIO $ allocaBytes (fromIntegral logLen) $ \logP -> do
                 -- space for the log reading result
                 alloca $ \resultP -> do
                     -- Try to obtain the log bytes
@@ -123,17 +127,18 @@ linkProgram vertexID fragmentID = do
                     peekArray result logP
             -- delete the program object and return the log
             glDeleteProgram programID
-            return $ Left $ "Program Link Error: " ++
-                (map (toEnum.fromEnum) logBytes)
+            throwE $ "Program Link Error: " ++ map (toEnum.fromEnum) logBytes
 
 -- | Given the source for the vertex shader and the fragment shader, compiles
 -- both and links them into a single program. If all of that is successful, the
 -- intermediate shaders are deleted before the final value is returned.
-programFromSources :: String -> String -> IO (Either String GLuint)
-programFromSources vertexSource fragmentSource = runExceptT $ do
-    v <- ExceptT $ loadShader GL_VERTEX_SHADER vertexSource
-    f <- ExceptT $ loadShader GL_FRAGMENT_SHADER fragmentSource
-    p <- ExceptT $ linkProgram v f
+programFromSources :: MonadIO m => String -> String -> m (Either String GLuint)
+programFromSources vertexSource fragmentSource = liftIO $ runExceptT $ do
+    v <- loadShader GL_VERTEX_SHADER vertexSource
+    f <- loadShader GL_FRAGMENT_SHADER fragmentSource
+    p <- linkProgram v f
     glDeleteShader v
     glDeleteShader f
     return p
+
+-}

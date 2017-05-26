@@ -15,7 +15,8 @@ cabal-version:       >=1.10
 
 library
     hs-source-dirs:     src
-    exposed-modules:    Hexes
+    exposed-modules:    Hexes,
+                        Hexes.Internal
     build-depends:      base,
                         gl,
                         GLFW-b,
@@ -24,22 +25,18 @@ library
                         JuicyPixels,
                         vector,
                         linear,
-                        containers
+                        containers,
+                        bytestring,
+                        storable-tuple
     default-language:   Haskell2010
+    other-extensions:   GeneralizedNewtypeDeriving
 
 executable demo
     hs-source-dirs:     app
     main-is:            Main.hs
     build-depends:      base,
                         hexes,
-                        gl,
-                        GLFW-b,
-                        raw-strings-qq,
-                        transformers,
-                        JuicyPixels,
-                        vector,
-                        linear,
-                        containers
+                        bytestring
     default-language:   Haskell2010
     -- ghc-options:        -O2
     -- ghc-options:        -optl-mwindows

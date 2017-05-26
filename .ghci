@@ -4,3 +4,6 @@
 :set +s
 -- https://hackage.haskell.org/package/GLFW-b-1.4.8.1/docs/Graphics-UI-GLFW.html#v:createWindow
 :set -fno-ghci-sandbox
+import qualified Data.Vector.Storable as VS
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as B
