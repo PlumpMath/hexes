@@ -1,9 +1,11 @@
 
 :set prompt "hexes> "
 :seti -XOverloadedStrings
-:set +s
--- https://hackage.haskell.org/package/GLFW-b-1.4.8.1/docs/Graphics-UI-GLFW.html#v:createWindow
-:set -fno-ghci-sandbox
 import qualified Data.Vector.Storable as VS
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
+import Graphics.GL.Types
+-- We put this after the imports so we don't see the timing info on them
+:set +s
+-- https://hackage.haskell.org/package/GLFW-b-1.4.8.1/docs/Graphics-UI-GLFW.html#v:createWindow
+:set -fno-ghci-sandbox

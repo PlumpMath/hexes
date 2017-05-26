@@ -1,10 +1,41 @@
 
+-- | Hexes is a module that allows you to easily work with a 2d grid of tiles
+-- and have them be easily rendered to the screen using OpenGL in a
+-- cross-platform way. It's assumed that many of the tiles in your tileset will
+-- be pictures of various character glyphs, so that your tile grid can be used
+-- to display a grid of characters.
+--
+-- Hexes cells each have a Word8 which determines what to draw in that cell.
+-- This means that there are 0 through 255 possible things to show in a single
+-- tileset. ASCII uses 32 through 127, and you can put special glyphs in the
+-- extra tile locations or leave them blank. That's up to you.
+--
+-- It is planned that every cell have controllable foreground and background
+-- colors, though I'm not quite sure how to do that at the moment. The
+-- background color is easy enough to do I think. I'm not sure how to make the
+-- foreground color optional so that you can instead just use whatever the tile
+-- image provides if you don't want a foreground color. I'm positive there's
+-- some sort of fragment shader magic that will do it with goofy alpha blending
+-- or whatever.
+--
+-- Because editing a 2d grid has two major conventions you might want to use,
+-- Hexes actions that interact with the grid generally have both "RC" and "XY"
+-- variants:
+--
+-- * RC forms allow you to specify Row and then Column. Both value are 0
+-- indexed, and __Rows increase in number as you go down the screen__. This is
+-- how curses or a text editor does things.
+--
+-- * XY forms allow you to specify X and then Y. Both values are 0 indexed, and
+-- __Y increases in number as you go up the screen__. This is how math does
+-- things in Quadrant 1 of a Cartesian Grid.
 module Hexes (
     Hexes(),
     runHexes,
     getRowColCount,
-    getCellWidthHeight,
-    setWindowTitle
+    setWindowTitle,
+    setGridToIntegral,
+    setGridToChar
     ) where
 
 import Hexes.Internal
@@ -31,7 +62,7 @@ fragmentShaderSource = [r|
         color = vec4(1.0f, 0.5f, 0.2f, 1.0f);
     }
     |]
-    
+
 -- | Makes a GLFW Window... or dies trying. Also sets it to have the current
 -- OpenGL context and adjusts the viewport to use the entire window space.
 --
