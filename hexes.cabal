@@ -15,8 +15,11 @@ cabal-version:       >=1.10
 
 library
     hs-source-dirs:     src
-    exposed-modules:    Hexes,
-                        Hexes.Internal
+    exposed-modules:    Hexes
+    other-modules:      Hexes.Internal,
+                        Hexes.Internal.Types,
+                        Hexes.Internal.GLFW,
+                        Hexes.Internal.Shader
     build-depends:      base,
                         gl,
                         GLFW-b,
@@ -36,7 +39,8 @@ executable demo
     main-is:            Main.hs
     build-depends:      base,
                         hexes,
-                        bytestring
+                        bytestring,
+                        JuicyPixels
     default-language:   Haskell2010
     -- ghc-options:        -O2
     -- ghc-options:        -optl-mwindows
