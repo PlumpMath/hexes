@@ -47,6 +47,8 @@ windowShouldClose = do
 pollEvents :: Hexes ()
 pollEvents = liftIO $ GLFW.pollEvents
 
+-- TODO: Offer waitEvents and postEmptyEvent as well.
+
 -- | Swaps the foreground and background framebuffer.
 swapBuffers :: Hexes ()
 swapBuffers = do
@@ -86,3 +88,8 @@ createWindow = do
             -- TODO: Don't set this auto-callback later on.
             liftIO $ GLFW.setKeyCallback win (Just escapeCallback)
             return True
+
+-- | Obtains GLFW's timer value. This is in seconds, and is the amount of time
+-- since GLFW was initialized. This can be safely used from any thread.
+getTime :: Hexes (Maybe Double)
+getTime = Hexes $ liftIO $ GLFW.getTime

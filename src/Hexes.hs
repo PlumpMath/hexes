@@ -61,7 +61,8 @@ module Hexes (
 
     -- * Extra
     getRowColCount,
-    getCellWidthHeight
+    getCellWidthHeight,
+    getTime
     ) where
 
 import Hexes.Internal

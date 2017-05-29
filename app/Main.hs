@@ -26,12 +26,15 @@ main = do
     let eStrImg = decodeImage bytes
     baseImage <- pixelMap greenToAlpha <$> either die (return . convertRGBA8) eStrImg
     runHexes 24 80 baseImage $ do
-        mainLoop
+        mainLoop 0.0
 
-mainLoop :: Hexes ()
-mainLoop = do
+mainLoop :: Double -> Hexes ()
+mainLoop lastTime = do
     enterLoop <- not <$> windowShouldClose
     when enterLoop $ do
         pollEvents
+        newTime <- maybe 0 id <$> getTime
+        let deltaTime = newTime - lastTime
+        --liftIO $ print $ (newTime - lastTime) * 1000
         refresh
-        mainLoop
+        mainLoop newTime

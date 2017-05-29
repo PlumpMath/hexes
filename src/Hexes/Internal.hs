@@ -10,13 +10,12 @@
 -- Here be Dragons, etc.
 module Hexes.Internal where
 
--- TODO is "would be nice if", FIXME is "this won't turn on unless"
-
 import Hexes.Internal.Types
 import Hexes.Internal.GLFW
 import Hexes.Internal.Shader
 
 -- base
+import Data.Char (ord)
 import Foreign
 import Foreign.C.String
 -- GLFW-b
@@ -31,11 +30,14 @@ import qualified Data.Vector.Storable as VS
 -- transformers
 import Control.Monad.IO.Class
 import Control.Monad.Trans.State
+-- Linear
+import Linear
 
 -- | You specify the number of rows, number of cols, the Image to use as the
 -- tilemap, and a Hexes action, and this will turn it into an IO action.
 runHexes :: Int -> Int -> Image PixelRGBA8 -> Hexes () -> IO ()
-runHexes rows cols img userAction = bracketGLFW $
+runHexes rows cols img userAction = bracketGLFW $ do
+    GLFW.setErrorCallback (Just $ \error msg -> print error >> putStrLn msg)
     flip evalStateT (mkState rows cols img) $ unwrapHexes $ do
         -- If it's not entirely clear: this is a Hexes do-block, and also GLFW
         -- is safely enabled during this block.
@@ -58,22 +60,12 @@ runHexes rows cols img userAction = bracketGLFW $
         glUseProgram shaderProgram
 
         -- Setup verticies
-        let cellIndexes = [0..(rows*cols)-1]
         (cWidth, cHeight) <- getCellWidthHeight
-        setVerticies $ concatMap (\i ->
-            let (row,col) = i `divMod` cols
-            -- TODO: We should wrap this all up so that our verticies list is
-            -- just a [VertexData] or some such blob that's easier to deal with.
-            in map fromIntegral [
-                -- X coordinate   Y coordinate         S  T   BG:RGB FG:RGBA
-                cWidth * col,     cHeight * row,       24,48, 1,0,0, 0,1,0,1, -- a
-                cWidth * (col+1), cHeight * row,       32,48, 1,0,0, 0,1,0,1, -- b
-                cWidth * (col+1), cHeight * (row + 1), 32,64, 1,0,0, 0,1,0,1, -- c
-                --
-                cWidth * (col+1), cHeight * (row + 1), 32,64, 0,1,1, 0,0,0,0, -- c
-                cWidth * col,     cHeight * (row + 1), 24,64, 0,1,1, 0,0,0,0, -- d
-                cWidth * col,     cHeight * row,       24,48, 0,1,1, 0,0,0,0  -- a
-            ]) cellIndexes
+        let cellIndexes = [0..(rows*cols)-1]
+            bangOrd = (fromIntegral $ ord 'a')
+            builder = \i -> mkCellPair cWidth cHeight cols
+                (fromIntegral i) (V3 0.5 0.5 0.5) (V4 1 1 1 1) i
+        setVerticies $ concatMap (cellPairToList . builder) cellIndexes
         
         -- vertex array object
         [vao] <- safeGenVertexArrays 1
@@ -165,18 +157,26 @@ refresh = do
     -- End by swapping the buffers.
     swapBuffers
 
+-- TODO: The following should maybe be collapsed into a single "work" function
+-- that takes the gen operation as a paramater in three different aliases, since
+-- they're so similar. Also, they can all trivially be adjusted to (Integral i),
+-- so that should be considered.
+
+-- | Generates a buffer and automatically handles the pointer fiddling.
 safeGenBuffers :: MonadIO m => Int -> m [GLuint]
 safeGenBuffers n = do
     liftIO $ allocaArray n $ \arrP -> do
         glGenBuffers (fromIntegral n) arrP
         (peekArray n arrP)
 
+-- | Generates a vertex array and automatically handles the pointer fiddling.
 safeGenVertexArrays :: MonadIO m => Int -> m [GLuint]
 safeGenVertexArrays n = do
     liftIO $ allocaArray n $ \arrP -> do
         glGenVertexArrays (fromIntegral n) arrP
         (peekArray n arrP)
 
+-- | Generates a texture object and automatically handles the pointer fiddling.
 safeGenTextures :: MonadIO m => Int -> m [GLuint]
 safeGenTextures n = do
     liftIO $ allocaArray n $ \arrP -> do
