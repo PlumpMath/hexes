@@ -138,7 +138,6 @@ refresh = do
     -- get out our stuff
     verticies <- getVerticies
     vao <- getTheVAO
-    vbo <- getTheVBO
 
     -- Bind our VAO
     glBindVertexArray vao
