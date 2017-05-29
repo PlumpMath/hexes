@@ -8,6 +8,7 @@ module Hexes.Internal.Types where
 
 -- base
 import Control.Applicative (liftA2)
+import Data.Word
 import Debug.Trace
 import Foreign.Storable
 -- GLFW-b
@@ -68,10 +69,7 @@ data HexesState = HexesState {
     theVAO :: GLuint,
 
     -- | Our Vertex Buffer Object.
-    theVBO :: GLuint,
-
-    -- | Our Element Buffer Object.
-    theEBO :: GLuint
+    theVBO :: GLuint
     }
 
 -- | Danger! This just lets you fill in the record as you go. You still need to
@@ -96,8 +94,7 @@ mkState rows cols img = let
     verticies = [],
     indicies = [],
     theVAO=0,
-    theVBO=0,
-    theEBO=0
+    theVBO=0
     }
 
 -- | A Hexes computation is one that wraps up whole a lot of 'GLFW' and 'gl'
@@ -181,14 +178,6 @@ setTheVBO vbo = hexModify (\s -> s{theVBO=vbo})
 -- | Obtains our VBO ID.
 getTheVBO :: Hexes GLuint
 getTheVBO = hexGets theVBO
-
--- | Sets out Element Buffer Object
-setTheEBO :: GLuint -> Hexes ()
-setTheEBO ebo = hexModify (\s -> s{theEBO=ebo})
-
--- | Gets our Element Buffer Object
-getTheEBO :: Hexes GLuint
-getTheEBO = hexGets theEBO
 
 -- | A single vertex entry that ogl will read.
 newtype VertexEntry = VertexEntry (V2 GLfloat, V2 GLfloat, V3 GLfloat, V4 GLfloat)
