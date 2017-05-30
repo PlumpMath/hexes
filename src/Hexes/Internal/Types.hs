@@ -237,3 +237,10 @@ mkCellPair wI hI cols word bg fg index = let
                 VertexEntry (V2 (w*col)     (h*row),    V2 (w*s)     (h*t)    ,bg,fg)
             )
         )
+
+{-
+<Gurkenglas> Lokathor, the lenses for bg, fg and that second v2 there would look something like
+"_CellTriangle . each . _CellTriangle . each . _VertexEntry . _3",
+"_CellTriangle . each . _CellTriangle . each . _VertexEntry . _4",
+and "_CellTriangle . _1 . _CellTriangle . _1 . _VertexEntry . _2"
+-}
