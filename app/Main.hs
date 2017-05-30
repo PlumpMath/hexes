@@ -26,6 +26,8 @@ main = do
     let eStrImg = decodeImage bytes
     baseImage <- pixelMap greenToAlpha <$> either die (return . convertRGBA8) eStrImg
     runHexes 24 80 baseImage $ do
+        setKeyCallback $ Just $ \key int keyState modKeys -> do
+            if keyState == KeyState'Pressed then liftIO $ print key else return ()
         mainLoop 0.0
 
 mainLoop :: Double -> Hexes ()

@@ -58,6 +58,13 @@ module Hexes (
     windowShouldClose,
     pollEvents,
     refresh,
+    
+    -- * Callbacks
+    HexesKeyCallback,
+    setKeyCallback,
+    Key(..),
+    KeyState(..),
+    ModifierKeys(..),
 
     -- * Extra
     getRowColCount,
@@ -70,7 +77,8 @@ import Hexes.Internal.Types
 import Hexes.Internal.GLFW
 import Hexes.Internal.Shader
 
+import Graphics.UI.GLFW (Key(..), KeyState(..), ModifierKeys(..))
 
--- TODO: Callbacks to gather user input
+-- TODO: Callbacks to gather more input types
 
 -- TODO: Actions to write output to the grid.

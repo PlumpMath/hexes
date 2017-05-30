@@ -8,7 +8,6 @@ module Hexes.Internal.Types where
 
 -- base
 import Control.Applicative (liftA2)
-import Control.Concurrent.MVar
 import Data.Word
 import Debug.Trace
 import Foreign.Storable
@@ -21,7 +20,7 @@ import Graphics.GL.Types
 import Codec.Picture
 -- transformers
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Reader
+import Control.Monad.Trans.State
 -- Linear
 import Linear hiding (trace)
 -- storable-tuple
@@ -38,7 +37,7 @@ tileSetColCount :: Integral i => i
 tileSetColCount = 10
 
 -- | The state tracked within a Hexes computation.
-data HexesData = HexesData {
+data HexesState = HexesState {
     -- | How many rows we're using
     rowCount :: !Int,
 
@@ -72,13 +71,13 @@ data HexesData = HexesData {
 
 -- | Danger! This just lets you fill in the record as you go. You still need to
 -- fill in the whole record before you start using it.
-mkState :: Int -> Int -> Image PixelRGBA8 -> HexesData
+mkState :: Int -> Int -> Image PixelRGBA8 -> HexesState
 mkState rows cols img = let
     iWidth = imageWidth img
     iHeight = imageHeight img
     (cellWidth,widthSpare) = iWidth `divMod` tileSetColCount
     (cellHeight,heightSpare) = iHeight `divMod` tileSetRowCount
-    in HexesData {
+    in HexesState {
     rowCount = rows,
     colCount = cols,
     cellWidth = if widthSpare == 0
@@ -97,37 +96,28 @@ mkState rows cols img = let
 -- | A Hexes computation is one that wraps up whole a lot of 'GLFW' and 'gl'
 -- activity so that you can easily manipulate a grid of characters and have it
 -- be rendered to the screen, similar to how curses works. Or, how it might work
--- if it was much easier to use at least.
+-- if it was much easier to work with at least.
 --
 -- Though this is a MonadIO newtype, it is *not* suggested to call any 'GLFW' or
 -- 'gl' code from within this monad yourself. Anything you should be interacting
 -- with from those packages is already provided to you as a 'Hexes' action
 -- instead. If you make your own calls to 'GLFW' or 'gl' from within a 'Hexes'
 -- action and something gets messed up, that's your fault.
---
--- Thread Safety: The Hexes data is kept in an MVar, so you can potentially use
--- Hexes in more than one thread at once. However, there's no way to batch up a
--- transaction, and also the 'refresh' call should only be made from the main
--- thread anyway.
-newtype Hexes a = Hexes (ReaderT (MVar HexesData) IO a)
+newtype Hexes a = Hexes (StateT HexesState IO a)
     deriving (Functor, Applicative, Monad, MonadIO)
 
--- | Unwraps a Hexes back into its non-newtype form. Since Hexes is a newtype,
--- this actually compiles away into nothing. It's just for type juggling.
-unwrapHexes :: Hexes a -> ReaderT (MVar HexesData) IO a
+-- | Unwraps a Hexes back into its StateT form. Since Hexes is a newtype, this
+-- actually compiles away into nothing. It's just for type juggling.
+unwrapHexes :: Hexes a -> StateT HexesState IO a
 unwrapHexes (Hexes action) = action
 
 -- | Looks into the HexesState for whatever you're after.
-hexGets :: (HexesData -> a) -> Hexes a
-hexGets projectFunc = Hexes $ do
-    var <- ask
-    liftIO $ withMVar var (\hexesData -> return $ projectFunc hexesData)
+hexGets :: (HexesState -> a) -> Hexes a
+hexGets = Hexes . gets
 
 -- | Modifies the HexesState however you like.
-hexModify :: (HexesData -> HexesData) -> Hexes ()
-hexModify modifyFunc = Hexes $ do
-    var <- ask
-    liftIO $ modifyMVar_ var (\hexesData -> return $ modifyFunc hexesData)
+hexModify :: (HexesState -> HexesState) -> Hexes ()
+hexModify = Hexes . modify
 
 -- | Obtains the 'GLFW.Window' for the current Hexes context.
 getWindow :: Hexes GLFW.Window
@@ -238,27 +228,20 @@ mkCellPair wI hI cols word bg fg index = let
             )
         )
 
--- | A callback that will fire after 'pollEvents' if there are user key presses
--- to process. You get the key pressed as an enum, the scancode of the key, the
--- key's event state, and any modifier keys that were being held down at the
--- time of the key event.
+-- type KeyCallback = GLFW.Window -> GLFW.Key -> Int -> GLFW.KeyState -> GLFW.ModifierKeys -> IO ()
+
+-- newtype Hexes a = Hexes (StateT HexesState IO a) deriving (Functor, Applicative, Monad, MonadIO)
+
 type HexesKeyCallback = GLFW.Key -> Int -> GLFW.KeyState -> GLFW.ModifierKeys -> Hexes ()
 
--- | Assigns the callback to use for key presses. Only one callback can be set
--- at a time, and if you assign 'Nothing' then it will clear the current
--- callback selection.
 setKeyCallback :: Maybe HexesKeyCallback -> Hexes ()
 setKeyCallback maybeCallback = do
-    -- We need to intercept the window argument of the GLFW.KeyCallback so the
-    -- user doesn't see it, and the callback that we give to GLFW also has to be
-    -- an IO () values, so we need to pass down our MVar and run a
-    -- sub-computation. All of the MVar's changes are synchronized so it's fine.
+    -- We want to get out the window and then assign it the callback specified.
+    -- In the case of Nothing we're just clearing any old callback. In the case
+    -- of a Just we want to wrap the user's HexesKeyCallback with a layer so
+    -- that the user doesn't see the GLFW.Window argument. We also want the
+    -- user's callback to run at the Hexes layer, not just at the IO only layer.
     win <- getWindow
-    var <- Hexes $ ask
     Hexes $ liftIO $ case maybeCallback of
         Nothing -> GLFW.setKeyCallback win Nothing
-        Just keyCall -> GLFW.setKeyCallback win $ Just $
-            \win key int keyState modKeys -> let
-                hexesAct = keyCall key int keyState modKeys :: Hexes ()
-                readerTMVarHDIO = unwrapHexes hexesAct
-                in runReaderT readerTMVarHDIO var
+        Just keyCall -> undefined -- ???
