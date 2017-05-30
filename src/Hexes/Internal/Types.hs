@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, TemplateHaskell #-}
 
 -- | Module for the types defined by the Hexes package. Primarily for the Hexes
 -- newtype. It is intended that, if this module has been completely filled, you
@@ -26,6 +26,10 @@ import Control.Monad.Trans.Reader
 import Linear hiding (trace)
 -- storable-tuple
 import Foreign.Storable.Tuple
+-- microlens
+import Lens.Micro
+-- microlens-th
+import Lens.Micro.TH
 
 -- | The number of rows we expect to find in a proper image file. This is a
 -- constant 26, but we're naming it for clarity.
@@ -62,6 +66,8 @@ data HexesData = HexesData {
 
     -- | The verticies of our program.
     verticies :: [GLfloat],
+    -- TODO: It really sucks but we should probably make this a
+    -- Vector.Storable.Mutable of CellTriangle values instead.
 
     -- | Our Vertex Array Object.
     theVAO :: GLuint,
@@ -178,7 +184,7 @@ getTheVBO :: Hexes GLuint
 getTheVBO = hexGets theVBO
 
 -- | A single vertex entry that ogl will read.
-newtype VertexEntry = VertexEntry (V2 GLfloat, V2 GLfloat, V3 GLfloat, V4 GLfloat)
+newtype VertexEntry = VertexEntry { _vertexEntry :: (V2 GLfloat, V2 GLfloat, V3 GLfloat, V4 GLfloat) }
     deriving (Eq, Ord, Show, Storable)
 
 -- | Converts a VertexEntry into the list of float data you need to push to the
@@ -188,7 +194,7 @@ vertexEntryToList (VertexEntry ((V2 x y),(V2 s t),(V3 bgr bgb bgg),(V4 fgr fgg f
     [x,y,s,t,bgr,bgb,bgg,fgr,fgg,fgb,fga]
 
 -- | A series of three vertex entries, forming a triangle.
-newtype CellTriangle = CellTriangle (VertexEntry,VertexEntry,VertexEntry)
+newtype CellTriangle = CellTriangle { _cellTriangle :: (VertexEntry,VertexEntry,VertexEntry) }
     deriving (Eq, Ord, Show, Storable)
 
 -- | Converts a CellTriangle into the list of float data you need to push to the
@@ -198,8 +204,12 @@ cellTriangleToList (CellTriangle (a,b,c)) =
     concatMap vertexEntryToList [a,b,c]
 
 -- | The two triangles that form a cell on the screen.
-newtype CellPair = CellPair (CellTriangle,CellTriangle)
+newtype CellPair = CellPair { _cellPair :: (CellTriangle,CellTriangle) }
     deriving (Eq, Ord, Show, Storable)
+
+makeLenses ''VertexEntry
+makeLenses ''CellTriangle
+makeLenses ''CellPair
 
 -- | Converts a CellPair into the list of float data you need to push to the
 -- GPU.
@@ -239,8 +249,16 @@ mkCellPair wI hI cols word bg fg index = let
         )
 
 {-
-<Gurkenglas> Lokathor, the lenses for bg, fg and that second v2 there would look something like
-"_CellTriangle . each . _CellTriangle . each . _VertexEntry . _3",
-"_CellTriangle . each . _CellTriangle . each . _VertexEntry . _4",
-and "_CellTriangle . _1 . _CellTriangle . _1 . _VertexEntry . _2"
+^. = get
+.~ = set
+%~ = modify
+
+tileID = complicated, we have to set the value in each of 6 places.
+
+bgPath = cellPair.each.cellTriangle.each.vertexEntry._3
+fgPath = cellPair.each.cellTriangle.each.vertexEntry._4
+
+examples:
+setBG = cell & cellPair.each.cellTriangle.each.vertexEntry._3 .~ newRGB
+setFG = cell & cellPair.each.cellTriangle.each.vertexEntry._4 .~ newRGBA
 -}

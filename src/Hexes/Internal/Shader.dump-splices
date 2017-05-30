@@ -1,0 +1,122 @@
+D:\dev\hexes\src\Hexes\Internal\Shader.hs:(22,25)-(47,6): Splicing expression
+    template-haskell-2.11.1.0:Language.Haskell.TH.Quote.quoteExp
+      r
+      "\r\n\
+      \    #version 330 core\r\n\
+      \    layout (location = 0) in vec2 position;\r\n\
+      \    layout (location = 1) in vec2 texST;\r\n\
+      \    layout (location = 2) in vec3 background;\r\n\
+      \    layout (location = 3) in vec3 foreground;\r\n\
+      \\r\n\
+      \    uniform vec2 windowResolution;\r\n\
+      \\r\n\
+      \    out vec2 fragmentTexST;\r\n\
+      \    out vec3 fragmentBackground;\r\n\
+      \    out vec3 fragmentForeground;\r\n\
+      \\r\n\
+      \    void main()\r\n\
+      \    {\r\n\
+      \        // Assign our position.\r\n\
+      \        float normX = (position.x / windowResolution.x)*2.0 - 1.0;\r\n\
+      \        float normY = ((windowResolution.y - position.y) / windowResolution.y)*2.0 - 1.0;\r\n\
+      \        gl_Position = vec4(normX, normY, 1.0, 1.0);\r\n\
+      \\r\n\
+      \        // Pass along the extra info.\r\n\
+      \        fragmentTexST = texST;\r\n\
+      \        fragmentBackground = background;\r\n\
+      \        fragmentForeground = foreground;\r\n\
+      \    }\r\n\
+      \    "
+  ======>
+    "\n\
+    \    #version 330 core\n\
+    \    layout (location = 0) in vec2 position;\n\
+    \    layout (location = 1) in vec2 texST;\n\
+    \    layout (location = 2) in vec3 background;\n\
+    \    layout (location = 3) in vec3 foreground;\n\
+    \\n\
+    \    uniform vec2 windowResolution;\n\
+    \\n\
+    \    out vec2 fragmentTexST;\n\
+    \    out vec3 fragmentBackground;\n\
+    \    out vec3 fragmentForeground;\n\
+    \\n\
+    \    void main()\n\
+    \    {\n\
+    \        // Assign our position.\n\
+    \        float normX = (position.x / windowResolution.x)*2.0 - 1.0;\n\
+    \        float normY = ((windowResolution.y - position.y) / windowResolution.y)*2.0 - 1.0;\n\
+    \        gl_Position = vec4(normX, normY, 1.0, 1.0);\n\
+    \\n\
+    \        // Pass along the extra info.\n\
+    \        fragmentTexST = texST;\n\
+    \        fragmentBackground = background;\n\
+    \        fragmentForeground = foreground;\n\
+    \    }\n\
+    \    "
+D:\dev\hexes\src\Hexes\Internal\Shader.hs:(51,27)-(81,6): Splicing expression
+    template-haskell-2.11.1.0:Language.Haskell.TH.Quote.quoteExp
+      r
+      "\r\n\
+      \    #version 330 core\r\n\
+      \    in vec2 fragmentTexST;\r\n\
+      \    in vec3 fragmentBackground;\r\n\
+      \    in vec4 fragmentForeground;\r\n\
+      \\r\n\
+      \    uniform sampler2D tilemap;\r\n\
+      \    uniform vec2 tilemapResolution;\r\n\
+      \\r\n\
+      \    out vec4 color;\r\n\
+      \\r\n\
+      \    void main()\r\n\
+      \    {\r\n\
+      \        // Convert our background color up into vec4.\r\n\
+      \        vec4 background = vec4(fragmentBackground, 1.0);\r\n\
+      \\r\n\
+      \        // Figure our texture's contribution.\r\n\
+      \        float normS = fragmentTexST.s / tilemapResolution.x;\r\n\
+      \        float normT = fragmentTexST.t / tilemapResolution.y;\r\n\
+      \        vec2 tileNormalized = vec2(normS, normT);\r\n\
+      \        vec4 tilemapColor = texture(tilemap, tileNormalized);\r\n\
+      \\r\n\
+      \        // here mix the tilemapColor and the foreground.\r\n\
+      \        vec4 overlay = mix(tilemapColor, fragmentForeground, fragmentForeground.a);\r\n\
+      \\r\n\
+      \        // Then apply what we get over top of the background.\r\n\
+      \        vec4 final = mix(background, overlay, tilemapColor.a);\r\n\
+      \\r\n\
+      \        color = final;\r\n\
+      \    }\r\n\
+      \    "
+  ======>
+    "\n\
+    \    #version 330 core\n\
+    \    in vec2 fragmentTexST;\n\
+    \    in vec3 fragmentBackground;\n\
+    \    in vec4 fragmentForeground;\n\
+    \\n\
+    \    uniform sampler2D tilemap;\n\
+    \    uniform vec2 tilemapResolution;\n\
+    \\n\
+    \    out vec4 color;\n\
+    \\n\
+    \    void main()\n\
+    \    {\n\
+    \        // Convert our background color up into vec4.\n\
+    \        vec4 background = vec4(fragmentBackground, 1.0);\n\
+    \\n\
+    \        // Figure our texture's contribution.\n\
+    \        float normS = fragmentTexST.s / tilemapResolution.x;\n\
+    \        float normT = fragmentTexST.t / tilemapResolution.y;\n\
+    \        vec2 tileNormalized = vec2(normS, normT);\n\
+    \        vec4 tilemapColor = texture(tilemap, tileNormalized);\n\
+    \\n\
+    \        // here mix the tilemapColor and the foreground.\n\
+    \        vec4 overlay = mix(tilemapColor, fragmentForeground, fragmentForeground.a);\n\
+    \\n\
+    \        // Then apply what we get over top of the background.\n\
+    \        vec4 final = mix(background, overlay, tilemapColor.a);\n\
+    \\n\
+    \        color = final;\n\
+    \    }\n\
+    \    "

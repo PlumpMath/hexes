@@ -1,0 +1,23 @@
+D:\dev\hexes\src\Hexes\Internal\Types.hs:208:1-24: Splicing declarations
+    makeLenses ''VertexEntry
+  ======>
+    vertexEntry ::
+      Lens' VertexEntry (V2 GLfloat, V2 GLfloat, V3 GLfloat, V4 GLfloat)
+    vertexEntry f_atkH (VertexEntry x_atkI)
+      = fmap (\ y_atkJ -> VertexEntry y_atkJ) (f_atkH x_atkI)
+    {-# INLINE vertexEntry #-}
+D:\dev\hexes\src\Hexes\Internal\Types.hs:209:1-25: Splicing declarations
+    makeLenses ''CellTriangle
+  ======>
+    cellTriangle ::
+      Lens' CellTriangle (VertexEntry, VertexEntry, VertexEntry)
+    cellTriangle f_atlz (CellTriangle x_atlA)
+      = fmap (\ y_atlB -> CellTriangle y_atlB) (f_atlz x_atlA)
+    {-# INLINE cellTriangle #-}
+D:\dev\hexes\src\Hexes\Internal\Types.hs:210:1-21: Splicing declarations
+    makeLenses ''CellPair
+  ======>
+    cellPair :: Lens' CellPair (CellTriangle, CellTriangle)
+    cellPair f_atm1 (CellPair x_atm2)
+      = fmap (\ y_atm3 -> CellPair y_atm3) (f_atm1 x_atm2)
+    {-# INLINE cellPair #-}

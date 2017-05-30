@@ -56,6 +56,7 @@ module Hexes (
     Hexes(),
     runHexes,
     windowShouldClose,
+    setWindowShouldClose,
     pollEvents,
     refresh,
     

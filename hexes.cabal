@@ -30,9 +30,14 @@ library
                         linear,
                         containers,
                         bytestring,
-                        storable-tuple
+                        storable-tuple,
+                        microlens,
+                        microlens-th
     default-language:   Haskell2010
-    other-extensions:   GeneralizedNewtypeDeriving
+    other-extensions:   GeneralizedNewtypeDeriving,
+                        QuasiQuotes,
+                        TemplateHaskell
+    ghc-options:        -ddump-splices  -ddump-to-file
 
 executable demo
     hs-source-dirs:     app
@@ -42,5 +47,6 @@ executable demo
                         bytestring,
                         JuicyPixels
     default-language:   Haskell2010
+    ghc-options:        -ddump-splices  -ddump-to-file
     -- ghc-options:        -O2
     -- ghc-options:        -optl-mwindows

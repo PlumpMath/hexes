@@ -39,6 +39,11 @@ windowShouldClose = do
     win <- getWindow
     liftIO $ GLFW.windowShouldClose win
 
+setWindowShouldClose :: Bool -> Hexes ()
+setWindowShouldClose b = do
+    win <- getWindow
+    liftIO $ GLFW.setWindowShouldClose win b
+
 -- | Causes the GLFW window system to poll for events. This is a foreign call,
 -- so it's uninterruptable until it completes. However, @pollEvents@ does not
 -- directly execute your callbacks while within the foreign call. Instead it
