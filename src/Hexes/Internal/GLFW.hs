@@ -14,7 +14,7 @@ import Graphics.GL.Core33
 import Graphics.GL.Types
 -- transformers
 import Control.Monad.IO.Class
-import Control.Monad.Trans.State
+import Control.Monad.Trans.Reader
 
 -- | Ensures that we only run GLFW code while it's initialized, and also that we
 -- always terminate it when we're done. Also, this function should only be used
@@ -93,3 +93,28 @@ createWindow = do
 -- since GLFW was initialized. This can be safely used from any thread.
 getTime :: Hexes (Maybe Double)
 getTime = Hexes $ liftIO $ GLFW.getTime
+
+-- | A callback that will fire after 'pollEvents' if there are user key presses
+-- to process. You get the key pressed as an enum, the scancode of the key, the
+-- key's event state, and any modifier keys that were being held down at the
+-- time of the key event.
+type HexesKeyCallback = GLFW.Key -> Int -> GLFW.KeyState -> GLFW.ModifierKeys -> Hexes ()
+
+-- | Assigns the callback to use for key presses. Only one callback can be set
+-- at a time, and if you assign 'Nothing' then it will clear the current
+-- callback selection.
+setKeyCallback :: Maybe HexesKeyCallback -> Hexes ()
+setKeyCallback maybeCallback = do
+    -- We need to intercept the window argument of the GLFW.KeyCallback so the
+    -- user doesn't see it, and the callback that we give to GLFW also has to be
+    -- an IO () values, so we need to pass down our MVar and run a
+    -- sub-computation. All of the MVar's changes are synchronized so it's fine.
+    win <- getWindow
+    var <- Hexes $ ask
+    Hexes $ liftIO $ case maybeCallback of
+        Nothing -> GLFW.setKeyCallback win Nothing
+        Just keyCall -> GLFW.setKeyCallback win $ Just $
+            \win key int keyState modKeys -> let
+                hexesAct = keyCall key int keyState modKeys :: Hexes ()
+                readerTMVarHDIO = unwrapHexes hexesAct
+                in runReaderT readerTMVarHDIO var
