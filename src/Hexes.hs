@@ -50,7 +50,7 @@
 -- __Y increases in number as you go up the screen__. This is how math does
 -- things in Quadrant 1 of a Cartesian Grid.
 --
--- * In both cases, Column and X increase as you move from right to left.
+-- * In both cases, Column and X increase as you move from left to right.
 module Hexes (
     -- * Core
     Hexes(),
