@@ -70,7 +70,7 @@ runHexes rows cols img userAction = bracketGLFW $ do
             bangOrd = (fromIntegral $ ord 'a')
             builder = \i -> mkCellPair cWidth cHeight cols
                 (fromIntegral i) (V3 0.5 0.5 0.5) (V4 1 1 1 1) i
-        setVerticies $ concatMap (cellPairToList . builder) cellIndexes
+        setVerticies $ VS.fromList $ concatMap (cellPairToList . builder) cellIndexes
         
         -- vertex array object
         [vao] <- safeGenVertexArrays 1
@@ -149,12 +149,13 @@ refresh = do
     glBindVertexArray vao
 
     -- push the current vertex data.
-    liftIO $ withArrayLen verticies $ \vLen verticiesP ->
+    liftIO $ VS.unsafeWith verticies $ \verticiesP ->
         let verticiesBytes = fromIntegral $ vLen * sizeOf(0.0::GLfloat)
+            vLen = VS.length verticies
         in glBufferData GL_ARRAY_BUFFER verticiesBytes (castPtr verticiesP) GL_DYNAMIC_DRAW
 
     -- Draw the elements
-    glDrawArrays GL_TRIANGLES 0 (fromIntegral $ length verticies)
+    glDrawArrays GL_TRIANGLES 0 (fromIntegral $ VS.length verticies)
     
     -- Clear the VAO selection for paranoia purposes.
     glBindVertexArray 0

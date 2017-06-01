@@ -24,6 +24,8 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader
 -- Linear
 import Linear hiding (trace)
+-- vector
+import qualified Data.Vector.Storable as VS
 -- storable-tuple
 import Foreign.Storable.Tuple
 -- microlens
@@ -65,7 +67,7 @@ data HexesData = HexesData {
     shaderProgram :: GLuint,
 
     -- | The verticies of our program.
-    verticies :: [GLfloat],
+    verticies :: VS.Vector GLfloat,
     -- TODO: It really sucks but we should probably make this a
     -- Vector.Storable.Mutable of CellTriangle values instead.
 
@@ -95,7 +97,7 @@ mkState rows cols img = let
         else trace ("WARNING: Image has spare pixel height: "++show heightSpare) cellHeight,
     window = undefined,
     shaderProgram = 0,
-    verticies = [],
+    verticies=undefined,
     theVAO=0,
     theVBO=0
     }
@@ -160,11 +162,11 @@ setShaderProgram :: GLuint -> Hexes ()
 setShaderProgram newProgram = hexModify (\s -> s {shaderProgram=newProgram})
 
 -- | Assigns the verticies to use.
-setVerticies :: [GLfloat] -> Hexes ()
+setVerticies :: VS.Vector GLfloat -> Hexes ()
 setVerticies verts = hexModify (\s -> s{verticies=verts})
 
 -- | Gets the verticies we're using.
-getVerticies :: Hexes [GLfloat]
+getVerticies :: Hexes (VS.Vector GLfloat)
 getVerticies = hexGets verticies
 
 -- | Assigns our Vertex Array Object

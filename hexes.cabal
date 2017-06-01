@@ -47,6 +47,6 @@ executable demo
                         bytestring,
                         JuicyPixels
     default-language:   Haskell2010
-    ghc-options:        -ddump-splices  -ddump-to-file
+    -- ghc-options:        -ddump-splices  -ddump-to-file
     -- ghc-options:        -O2
     -- ghc-options:        -optl-mwindows
