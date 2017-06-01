@@ -126,7 +126,7 @@ runHexes rows cols img userAction = bracketGLFW $ do
         glUniform2f tilemapResolutionLoc (fromIntegral iWidth) (fromIntegral iHeight)
 
         -- Set to not using a vertex array until we're ready again.
-        glBindVertexArray 0
+        --glBindVertexArray 0
         
         -- Finally, we are ready to enter the user's action.
         userAction
@@ -143,10 +143,10 @@ refresh = do
 
     -- get out our stuff
     verticies <- getVerticies
-    vao <- getTheVAO
+    --vao <- getTheVAO
 
     -- Bind our VAO
-    glBindVertexArray vao
+    --glBindVertexArray vao
 
     -- push the current vertex data.
     liftIO $ VS.unsafeWith verticies $ \verticiesP ->
@@ -159,7 +159,7 @@ refresh = do
     glDrawArrays GL_TRIANGLES 0 126720
     
     -- Clear the VAO selection for paranoia purposes.
-    glBindVertexArray 0
+    --glBindVertexArray 0
 
     -- End by swapping the buffers.
     swapBuffers
