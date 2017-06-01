@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
@@ -13,6 +14,8 @@ import Control.Monad.IO.Class
 import Codec.Picture
 -- linear
 import Linear
+-- embed-file
+import Data.FileEmbed
 
 -- hexes
 import Hexes
@@ -23,9 +26,12 @@ greenToAlpha :: PixelRGBA8 -> PixelRGBA8
 greenToAlpha (PixelRGBA8 0 255 0 255) = PixelRGBA8 0 0 0 0
 greenToAlpha p = p
 
+imageBytes :: ByteString
+imageBytes = $(embedFile "font-data/FixedSysExcelsior.png")
+
+main :: IO ()
 main = do
-    bytes <- B.readFile "font-data/FixedSysExcelsior.png"
-    let eStrImg = decodeImage bytes
+    let eStrImg = decodeImage imageBytes
     baseImage <- pixelMap greenToAlpha <$> either die (return . convertRGBA8) eStrImg
     runHexes 24 80 baseImage $ do
         setKeyCallback $ Just $ \key int keyState modKeys -> do
