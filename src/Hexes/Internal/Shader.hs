@@ -24,13 +24,13 @@ vertexShaderSource = [r|
     layout (location = 0) in vec2 position;
     layout (location = 1) in vec2 texST;
     layout (location = 2) in vec3 background;
-    layout (location = 3) in vec3 foreground;
+    layout (location = 3) in vec4 foreground;
 
     uniform vec2 windowResolution;
 
     out vec2 fragmentTexST;
     out vec3 fragmentBackground;
-    out vec3 fragmentForeground;
+    out vec4 fragmentForeground;
 
     void main()
     {
