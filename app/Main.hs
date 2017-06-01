@@ -11,6 +11,8 @@ import qualified Data.ByteString as B
 import Control.Monad.IO.Class
 -- JuicyPixels
 import Codec.Picture
+-- linear
+import Linear
 
 -- hexes
 import Hexes
@@ -37,6 +39,10 @@ mainLoop lastTime = do
         pollEvents
         newTime <- maybe 0 id <$> getTime
         let deltaTime = newTime - lastTime
+            bgColor = abs $ realToFrac $ cos newTime
+            fgColor = abs $ realToFrac $ sin newTime
         --liftIO $ print $ (newTime - lastTime) * 1000
+        setGridBackground (V3 bgColor bgColor bgColor)
+        setGridForeground (V4 fgColor (1-fgColor) fgColor fgColor)
         refresh
         mainLoop newTime

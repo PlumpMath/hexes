@@ -67,9 +67,7 @@ data HexesData = HexesData {
     shaderProgram :: GLuint,
 
     -- | The verticies of our program.
-    verticies :: VS.Vector GLfloat,
-    -- TODO: It really sucks but we should probably make this a
-    -- Vector.Storable.Mutable of CellTriangle values instead.
+    verticies :: VS.Vector CellPair,
 
     -- | Our Vertex Array Object.
     theVAO :: GLuint,
@@ -162,11 +160,11 @@ setShaderProgram :: GLuint -> Hexes ()
 setShaderProgram newProgram = hexModify (\s -> s {shaderProgram=newProgram})
 
 -- | Assigns the verticies to use.
-setVerticies :: VS.Vector GLfloat -> Hexes ()
+setVerticies :: VS.Vector CellPair -> Hexes ()
 setVerticies verts = hexModify (\s -> s{verticies=verts})
 
 -- | Gets the verticies we're using.
-getVerticies :: Hexes (VS.Vector GLfloat)
+getVerticies :: Hexes (VS.Vector CellPair)
 getVerticies = hexGets verticies
 
 -- | Assigns our Vertex Array Object
@@ -249,6 +247,50 @@ mkCellPair wI hI cols word bg fg index = let
                 VertexEntry (V2 (w*col)     (h*row),    V2 (w*s)     (h*t)    ,bg,fg)
             )
         )
+
+-- | Given tile width and height, and the new tile index to use, this will
+-- convert an old CellPair value to the new tile index, preserving all other
+-- values within the CellPair.
+updateGlyph :: Int -> Int -> Word8 -> CellPair -> CellPair
+updateGlyph wI hI word (CellPair (
+        CellTriangle (
+                VertexEntry (xy1, _, bg1, fg1),
+                VertexEntry (xy2, _, bg2, fg2),
+                VertexEntry (xy3, _, bg3, fg3)
+            ),
+        CellTriangle (
+                VertexEntry (xy4, _, bg4, fg4),
+                VertexEntry (xy5, _, bg5, fg5),
+                VertexEntry (xy6, _, bg6, fg6)
+            )
+        )) = let
+        (tI,sI) = (fromIntegral word) `divMod` 10 -- TODO: Make this not a magic number
+        w = fromIntegral wI :: GLfloat
+        h = fromIntegral hI :: GLfloat
+        s = fromIntegral sI :: GLfloat
+        t = fromIntegral tI :: GLfloat
+        in CellPair (
+        CellTriangle (
+                VertexEntry (xy1, V2 (w*s)     (h*t)    , bg1, fg1),
+                VertexEntry (xy2, V2 (w*(s+1)) (h*t)    , bg2, fg2),
+                VertexEntry (xy3, V2 (w*(s+1)) (h*(t+1)), bg3, fg3)
+            ),
+        CellTriangle (
+                VertexEntry (xy4, V2 (w*(s+1)) (h*(t+1)), bg4, fg4),
+                VertexEntry (xy5, V2 (w*s)     (h*(t+1)), bg5, fg5),
+                VertexEntry (xy6, V2 (w*s)     (h*t)    , bg6, fg6)
+            )
+        )
+
+setCellPairBackground :: V3 GLfloat -> CellPair -> CellPair
+setCellPairBackground newBG cell = let
+    bgPath = cellPair.each.cellTriangle.each.vertexEntry._3
+    in cell & bgPath .~ newBG
+
+setCellPairForeground :: V4 GLfloat -> CellPair -> CellPair
+setCellPairForeground newFG cell = let
+    bgPath = cellPair.each.cellTriangle.each.vertexEntry._4
+    in cell & bgPath .~ newFG
 
 {-
 ^. = get

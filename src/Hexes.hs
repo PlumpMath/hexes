@@ -67,6 +67,10 @@ module Hexes (
     KeyState(..),
     ModifierKeys(..),
 
+    -- * Updates
+    setGridBackground,
+    setGridForeground,
+
     -- * Extra
     getRowColCount,
     getCellWidthHeight,
@@ -83,3 +87,5 @@ import Graphics.UI.GLFW (Key(..), KeyState(..), ModifierKeys(..))
 -- TODO: Callbacks to gather more input types
 
 -- TODO: Actions to write output to the grid.
+
+-- TODO: export the Linear V3 and V4 so that people can assign colors easily.

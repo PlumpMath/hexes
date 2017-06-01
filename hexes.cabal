@@ -45,7 +45,8 @@ executable demo
     build-depends:      base,
                         hexes,
                         bytestring,
-                        JuicyPixels
+                        JuicyPixels,
+                        linear
     default-language:   Haskell2010
     -- ghc-options:        -ddump-splices  -ddump-to-file
     -- ghc-options:        -O2
