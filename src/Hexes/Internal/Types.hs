@@ -76,6 +76,11 @@ data HexesData = HexesData {
     theVBO :: GLuint
     }
 
+-- TODO: Make HexesData storable and store it in a Ptr instead of an MVar maybe?
+-- Probably faster, but not thread safe at all. Then again we might just want to
+-- mark all the drawing stuff as just being main thread only anyway because GLFW
+-- and OGL are already pretty finnicky on thread safety as it is.
+
 -- | Danger! This just lets you fill in the record as you go. You still need to
 -- fill in the whole record before you start using it.
 mkState :: Int -> Int -> Image PixelRGBA8 -> HexesData
