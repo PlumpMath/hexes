@@ -67,7 +67,7 @@ data HexesData = HexesData {
     shaderProgram :: GLuint,
 
     -- | The verticies of our program.
-    verticies :: VS.Vector CellPair,
+    verticies :: VS.Vector CellData,
 
     -- | Our Vertex Array Object.
     theVAO :: GLuint,
@@ -165,11 +165,11 @@ setShaderProgram :: GLuint -> Hexes ()
 setShaderProgram newProgram = hexModify (\s -> s {shaderProgram=newProgram})
 
 -- | Assigns the verticies to use.
-setVerticies :: VS.Vector CellPair -> Hexes ()
+setVerticies :: VS.Vector CellData -> Hexes ()
 setVerticies verts = hexModify (\s -> s{verticies=verts})
 
 -- | Gets the verticies we're using.
-getVerticies :: Hexes (VS.Vector CellPair)
+getVerticies :: Hexes (VS.Vector CellData)
 getVerticies = hexGets verticies
 
 -- | Assigns our Vertex Array Object
@@ -209,29 +209,29 @@ cellTriangleToList (CellTriangle (a,b,c)) =
     concatMap vertexEntryToList [a,b,c]
 
 -- | The two triangles that form a cell on the screen.
-newtype CellPair = CellPair { _cellPair :: (CellTriangle,CellTriangle) }
+newtype CellData = CellData { _cellData :: (CellTriangle,CellTriangle) }
     deriving (Eq, Ord, Show, Storable)
 
 makeLenses ''VertexEntry
 makeLenses ''CellTriangle
-makeLenses ''CellPair
+makeLenses ''CellData
 
--- | Converts a CellPair into the list of float data you need to push to the
+-- | Converts a CellData into the list of float data you need to push to the
 -- GPU.
-cellPairToList :: CellPair -> [GLfloat]
-cellPairToList (CellPair (upperRight,bottomLeft)) =
+cellDataToList :: CellData -> [GLfloat]
+cellDataToList (CellData (upperRight,bottomLeft)) =
     concatMap cellTriangleToList [upperRight,bottomLeft]
 
 -- | Given the correct info, forms a CellPair value.
-mkCellPair :: Int        -- ^ The width (in pixels) of one cell/tile
+mkCellData :: Int        -- ^ The width (in pixels) of one cell/tile
            -> Int        -- ^ The height (in pixels) of one cell/tile
            -> Int        -- ^ The number of columns in the grid
            -> Word8      -- ^ The cell's tileID
            -> V3 GLfloat -- ^ The cell's background color
            -> V4 GLfloat -- ^ The cell's foreground color
            -> Int        -- ^ Cell's index within the grid
-           -> CellPair
-mkCellPair wI hI cols word bg fg index = let
+           -> CellData
+mkCellData wI hI cols word bg fg index = let
     (rowI,colI) = index `divMod` cols
     (tI,sI) = (fromIntegral word) `divMod` 10 -- TODO: Make this not a magic number
     w = fromIntegral wI :: GLfloat
@@ -240,7 +240,7 @@ mkCellPair wI hI cols word bg fg index = let
     col = fromIntegral colI :: GLfloat
     s = fromIntegral sI :: GLfloat
     t = fromIntegral tI :: GLfloat
-    in CellPair (
+    in CellData (
         CellTriangle (
                 VertexEntry (V2 (w*col)     (h*row),    V2 (w*s)     (h*t)    ,bg,fg),
                 VertexEntry (V2 (w*(col+1)) (h*row),    V2 (w*(s+1)) (h*t)    ,bg,fg),
@@ -254,10 +254,14 @@ mkCellPair wI hI cols word bg fg index = let
         )
 
 -- | Given tile width and height, and the new tile index to use, this will
--- convert an old CellPair value to the new tile index, preserving all other
--- values within the CellPair.
-updateGlyph :: Int -> Int -> Word8 -> CellPair -> CellPair
-updateGlyph wI hI word (CellPair (
+-- convert an old CellData value to the new tile index, preserving all other
+-- values within the CellData.
+setCellDataTileID :: Int -> Int -> Word8 -> CellData -> CellData
+-- TODO: find a way to extract the cell width and height from the xy pairs so
+-- that we can write this whole function as just foo :: Word8 -> CellData ->
+-- CellData and then expose it to the user. Maybe the user could perform their
+-- own maps and such and get stream fusion going?
+setCellDataTileID wI hI word (CellData (
         CellTriangle (
                 VertexEntry (xy1, _, bg1, fg1),
                 VertexEntry (xy2, _, bg2, fg2),
@@ -274,7 +278,7 @@ updateGlyph wI hI word (CellPair (
         h = fromIntegral hI :: GLfloat
         s = fromIntegral sI :: GLfloat
         t = fromIntegral tI :: GLfloat
-        in CellPair (
+        in CellData (
         CellTriangle (
                 VertexEntry (xy1, V2 (w*s)     (h*t)    , bg1, fg1),
                 VertexEntry (xy2, V2 (w*(s+1)) (h*t)    , bg2, fg2),
@@ -287,14 +291,14 @@ updateGlyph wI hI word (CellPair (
             )
         )
 
-setCellPairBackground :: V3 GLfloat -> CellPair -> CellPair
-setCellPairBackground newBG cell = let
-    bgPath = cellPair.each.cellTriangle.each.vertexEntry._3
+setCellDataBackground :: V3 GLfloat -> CellData -> CellData
+setCellDataBackground newBG cell = let
+    bgPath = cellData.each.cellTriangle.each.vertexEntry._3
     in cell & bgPath .~ newBG
 
-setCellPairForeground :: V4 GLfloat -> CellPair -> CellPair
-setCellPairForeground newFG cell = let
-    bgPath = cellPair.each.cellTriangle.each.vertexEntry._4
+setCellDataForeground :: V4 GLfloat -> CellData -> CellData
+setCellDataForeground newFG cell = let
+    bgPath = cellData.each.cellTriangle.each.vertexEntry._4
     in cell & bgPath .~ newFG
 
 {-

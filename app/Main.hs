@@ -5,6 +5,7 @@ module Main where
 -- base
 import Control.Monad (when)
 import System.Exit (die)
+import Data.Char
 -- bytestring
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -35,7 +36,60 @@ main = do
     baseImage <- pixelMap greenToAlpha <$> either die (return . convertRGBA8) eStrImg
     runHexes 24 80 baseImage $ do
         setKeyCallback $ Just $ \key int keyState modKeys -> do
-            if keyState == KeyState'Pressed then liftIO $ print key else return ()
+            if keyState == KeyState'Pressed
+                then let
+                    o = case key of
+                            Key'Space -> ord ' '
+                            Key'Apostrophe -> ord '\''
+                            Key'Comma -> ord ','
+                            Key'Minus -> ord '-'
+                            Key'Period -> ord '.'
+                            Key'Slash -> ord '/'
+                            Key'0 -> ord '0'
+                            Key'1 -> ord '1'
+                            Key'2 -> ord '2'
+                            Key'3 -> ord '3'
+                            Key'4 -> ord '4'
+                            Key'5 -> ord '5'
+                            Key'6 -> ord '6'
+                            Key'7 -> ord '7'
+                            Key'8 -> ord '8'
+                            Key'9 -> ord '9'
+                            Key'Semicolon -> ord ';'
+                            Key'Equal -> ord '='
+                            Key'A -> ord 'a'
+                            Key'B -> ord 'b'
+                            Key'C -> ord 'c'
+                            Key'D -> ord 'd'
+                            Key'E -> ord 'e'
+                            Key'F -> ord 'f'
+                            Key'G -> ord 'g'
+                            Key'H -> ord 'h'
+                            Key'I -> ord 'i'
+                            Key'J -> ord 'j'
+                            Key'K -> ord 'k'
+                            Key'L -> ord 'l'
+                            Key'M -> ord 'm'
+                            Key'N -> ord 'n'
+                            Key'O -> ord 'o'
+                            Key'P -> ord 'p'
+                            Key'Q -> ord 'q'
+                            Key'R -> ord 'r'
+                            Key'S -> ord 's'
+                            Key'T -> ord 't'
+                            Key'U -> ord 'u'
+                            Key'V -> ord 'v'
+                            Key'W -> ord 'w'
+                            Key'X -> ord 'x'
+                            Key'Y -> ord 'y'
+                            Key'Z -> ord 'z'
+                            Key'LeftBracket -> ord ']'
+                            Key'Backslash -> ord '\\'
+                            Key'RightBracket -> ord '['
+                            Key'GraveAccent -> ord '`'
+                            _ -> ord '?'
+                    in setGridTileID (fromIntegral o)
+                else return ()
         mainLoop 0.0
 
 mainLoop :: Double -> Hexes ()

@@ -68,7 +68,7 @@ runHexes rows cols img userAction = bracketGLFW $ do
         (cWidth, cHeight) <- getCellWidthHeight
         let cellIndexes = [0..(rows*cols)-1]
             bangOrd = (fromIntegral $ ord 'a')
-            builder = \i -> mkCellPair cWidth cHeight cols
+            builder = \i -> mkCellData cWidth cHeight cols
                 (fromIntegral i) (V3 0.5 0.5 0.5) (V4 1 1 1 1) i
         setVerticies $ VS.fromList $ map builder cellIndexes
         
@@ -150,7 +150,7 @@ refresh = do
 
     -- push the current vertex data.
     liftIO $ VS.unsafeWith verticies $ \verticiesP ->
-        let verticiesBytes = fromIntegral $ vLen * sizeOf(undefined::CellPair)
+        let verticiesBytes = fromIntegral $ vLen * sizeOf(undefined::CellData)
             vLen = VS.length verticies
         in glBufferData GL_ARRAY_BUFFER verticiesBytes (castPtr verticiesP) GL_DYNAMIC_DRAW
 
@@ -167,12 +167,18 @@ refresh = do
 setGridBackground :: V3 GLfloat -> Hexes ()
 setGridBackground bg = do
     v <- getVerticies
-    setVerticies (VS.map (setCellPairBackground bg) v)
+    setVerticies (VS.map (setCellDataBackground bg) v)
 
 setGridForeground :: V4 GLfloat -> Hexes ()
 setGridForeground fg = do
     v <- getVerticies
-    setVerticies (VS.map (setCellPairForeground fg) v)
+    setVerticies (VS.map (setCellDataForeground fg) v)
+
+setGridTileID :: Word8 -> Hexes ()
+setGridTileID tid = do
+    v <- getVerticies
+    (wI,hI) <- getCellWidthHeight
+    setVerticies (VS.map (setCellDataTileID wI hI tid) v)
 
 -- TODO: The following should maybe (?) be collapsed into a single "work"
 -- function that takes the gen operation as a paramater in three different

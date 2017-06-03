@@ -68,8 +68,12 @@ module Hexes (
     ModifierKeys(..),
 
     -- * Updates
+    V3(..),
+    V4(..),
+    GLfloat,
     setGridBackground,
     setGridForeground,
+    setGridTileID,
 
     -- * Extra
     getRowColCount,
@@ -84,8 +88,12 @@ import Hexes.Internal.Shader
 
 import Graphics.UI.GLFW (Key(..), KeyState(..), ModifierKeys(..))
 
+import Linear
+
+import Graphics.GL.Types
+
+-- TODO: Make helpers so that interpreting the keys is a lot easier.
+
 -- TODO: Callbacks to gather more input types
 
--- TODO: Actions to write output to the grid.
-
--- TODO: export the Linear V3 and V4 so that people can assign colors easily.
+-- TODO: More actions to write output to the grid.
