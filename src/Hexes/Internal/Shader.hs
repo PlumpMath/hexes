@@ -13,7 +13,6 @@ import Foreign
 import Foreign.C.String
 -- transformers
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Except
 -- raw-strings-qq
 import Text.RawString.QQ
 
@@ -84,7 +83,7 @@ fragmentShaderSource = [r|
 -- successfully compiled shader, or (Left err) with the error message. In the
 -- error case, the shader id is deleted before the function returns to avoid
 -- accidentally leaking shader objects.
-loadShader :: MonadIO m => GLenum -> String -> ExceptT String m GLuint
+loadShader :: MonadIO m => GLenum -> String -> m (Either String GLuint)
 loadShader shaderType source = do
     -- new shader object
     shaderID <- glCreateShader shaderType
@@ -100,7 +99,7 @@ loadShader shaderType source = do
         peek successP
     if success == GL_TRUE
         -- success: we're done
-        then return shaderID
+        then return $ Right $ shaderID
         -- failure: we get the log, delete the shader, and return the log.
         else do
             -- how many bytes the info log should be (including the '\0')
@@ -123,12 +122,12 @@ loadShader shaderType source = do
                     GL_GEOMETRY_SHADER -> "Geometry"
                     GL_FRAGMENT_SHADER -> "Fragment"
                     _ -> "Unknown Type"
-            throwE $ prefix ++ " Shader Error:" ++ map (toEnum.fromEnum) logBytes
+            return $ Left $ prefix ++ " Shader Error:" ++ map (toEnum.fromEnum) logBytes
 
 -- | Given a vertex shader object and a fragment shader object, this will link
 -- them into a new program, giving you (Right id). If there's a linking error
 -- the error log is retrieved, the program deleted, and (Left err) is returned.
-linkProgram :: MonadIO m => GLuint -> GLuint -> ExceptT String m GLuint
+linkProgram :: MonadIO m => GLuint -> GLuint -> m (Either String GLuint)
 linkProgram vertexID fragmentID = do
     programID <- glCreateProgram
     glAttachShader programID vertexID
@@ -139,7 +138,7 @@ linkProgram vertexID fragmentID = do
         peek successP
     if success == GL_TRUE
         -- success: we're done
-        then return programID
+        then return $ Right programID
         -- failure: we get the log, delete the shader, and return the log.
         else do
             -- how many bytes the info log should be (including the '\0')
@@ -157,19 +156,24 @@ linkProgram vertexID fragmentID = do
                     peekArray result logP
             -- delete the program object and return the log
             glDeleteProgram programID
-            throwE $ "Program Link Error: " ++ map (toEnum.fromEnum) logBytes
+            return $ Left $ "Program Link Error: " ++ map (toEnum.fromEnum) logBytes
 
 -- | Given the source for the vertex shader and the fragment shader, compiles
 -- both and links them into a single program. If all of that is successful, the
 -- intermediate shaders are deleted before the final value is returned.
---
--- This is intended to be the "actual" call you'd make, so the 'runExceptT'
--- unwrapping step is pre-applied for simplicity.
 programFromSources :: MonadIO m => String -> String -> m (Either String GLuint)
-programFromSources vertexSource fragmentSource = liftIO $ runExceptT $ do
-    v <- loadShader GL_VERTEX_SHADER vertexSource
-    f <- loadShader GL_FRAGMENT_SHADER fragmentSource
-    p <- linkProgram v f
-    glDeleteShader v
-    glDeleteShader f
-    return p
+programFromSources vertexSource fragmentSource = liftIO $ do
+    eitherVertShader <- loadShader GL_VERTEX_SHADER vertexSource
+    case eitherVertShader of
+        Left e -> return $ Left e
+        Right vertShader -> do
+            eitherFragShader <- loadShader GL_FRAGMENT_SHADER fragmentSource
+            case eitherFragShader of
+                Left e -> do
+                    glDeleteShader vertShader
+                    return $ Left e
+                Right fragShader -> do
+                    eitherProgram <- linkProgram vertShader fragShader
+                    glDeleteShader vertShader
+                    glDeleteShader fragShader
+                    return $ eitherProgram
