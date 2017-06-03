@@ -22,16 +22,14 @@ import Codec.Picture
 -- transformers
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader
--- Linear
+-- linear
 import Linear hiding (trace)
 -- vector
 import qualified Data.Vector.Storable as VS
 -- storable-tuple
 import Foreign.Storable.Tuple
--- microlens
-import Lens.Micro
--- microlens-th
-import Lens.Micro.TH
+-- lens
+import Control.Lens
 
 -- | The number of rows we expect to find in a proper image file. This is a
 -- constant 26, but we're naming it for clarity.
