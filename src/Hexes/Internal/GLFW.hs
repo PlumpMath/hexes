@@ -32,6 +32,8 @@ glfwDefaultHints = Hexes $ liftIO $ do
     GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
     GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
     GLFW.windowHint (GLFW.WindowHint'Resizable False)
+    -- This line seems to help the library run on OSX, somehow.
+    GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
 
 -- | Obtains the "window should close" value of the Hexes window.
 windowShouldClose :: Hexes Bool
