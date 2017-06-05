@@ -13,7 +13,8 @@ cabal-version:       >=1.10
 
 -- Assumes Stackage LTS 8.13 or later.
 -- Might work with earlier versions.
--- The cabal.config will cover you if you're using cabal-install
+-- This cabal.config will cover you if you're using cabal-install:
+-- https://www.stackage.org/lts-8.13/cabal.config
 
 library
     hs-source-dirs:     src
