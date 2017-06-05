@@ -27,6 +27,7 @@ import Graphics.GL.Types
 -- JuicyPixels
 import Codec.Picture
 -- vector
+import Data.Vector.Storable ((//),(!))
 import qualified Data.Vector.Storable as VS
 -- transformers
 import Control.Monad.IO.Class
@@ -164,21 +165,88 @@ refresh = do
     -- End by swapping the buffers.
     swapBuffers
 
+rc2i :: Int -> Int -> Hexes Int
+rc2i row col = do
+    (rows,cols) <- getRowColCount
+    let row' = row `mod` rows
+        col' = col `mod` cols
+    return $ col' + row' *cols
+
+xy2i :: Int -> Int -> Hexes Int
+xy2i x y = do
+    (rows,cols) <- getRowColCount
+    let row' = (rows-(y+1)) `mod` rows
+        col' = x `mod` cols
+    return $ col' + row' * cols
+
 setGridBackground :: V3 GLfloat -> Hexes ()
 setGridBackground bg = do
     v <- getVerticies
     setVerticies (VS.map (setCellDataBackground bg) v)
+
+setBackgroundXY :: V3 GLfloat -> Int -> Int -> Hexes ()
+setBackgroundXY bg x y = do
+    i <- xy2i x y
+    v <- getVerticies
+    let newCell = setCellDataBackground bg (v ! i)
+    setVerticies (v // [(i,newCell)])
+
+setBackgroundRC :: V3 GLfloat -> Int -> Int -> Hexes ()
+setBackgroundRC bg r c = do
+    i <- rc2i r c
+    v <- getVerticies
+    let newCell = setCellDataBackground bg (v ! i)
+    setVerticies (v // [(i,newCell)])
 
 setGridForeground :: V4 GLfloat -> Hexes ()
 setGridForeground fg = do
     v <- getVerticies
     setVerticies (VS.map (setCellDataForeground fg) v)
 
+setForegroundXY :: V4 GLfloat -> Int -> Int -> Hexes ()
+setForegroundXY fg x y = do
+    i <- xy2i x y
+    v <- getVerticies
+    let newCell = setCellDataForeground fg (v ! i)
+    setVerticies (v // [(i,newCell)])
+
+setForegroundRC :: V4 GLfloat -> Int -> Int -> Hexes ()
+setForegroundRC fg r c = do
+    i <- rc2i r c
+    v <- getVerticies
+    let newCell = setCellDataForeground fg (v ! i)
+    setVerticies (v // [(i,newCell)])
+
 setGridTileID :: Word8 -> Hexes ()
 setGridTileID tid = do
     v <- getVerticies
     (wI,hI) <- getCellWidthHeight
     setVerticies (VS.map (setCellDataTileID wI hI tid) v)
+
+setTileIDXY :: Word8 -> Int -> Int -> Hexes ()
+setTileIDXY tid x y = do
+    i <- xy2i x y
+    v <- getVerticies
+    (wI,hI) <- getCellWidthHeight
+    let newCell = setCellDataTileID wI hI tid (v ! i)
+    setVerticies (v // [(i,newCell)])
+
+setTileIDRC :: Word8 -> Int -> Int -> Hexes ()
+setTileIDRC tid r c = do
+    i <- rc2i r c
+    v <- getVerticies
+    (wI,hI) <- getCellWidthHeight
+    let newCell = setCellDataTileID wI hI tid (v ! i)
+    setVerticies (v // [(i,newCell)])
+
+setGridChar :: Char -> Hexes ()
+setGridChar c = setGridTileID (fromIntegral $ ord c)
+
+setCharXY :: Char -> Int -> Int -> Hexes ()
+setCharXY c x y = setTileIDXY (fromIntegral $ ord c) x y
+
+setCharRC :: Char -> Int -> Int -> Hexes ()
+setCharRC ch r c = setTileIDRC (fromIntegral $ ord ch) r c
 
 -- TODO: The following should maybe (?) be collapsed into a single "work"
 -- function that takes the gen operation as a paramater in three different

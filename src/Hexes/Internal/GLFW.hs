@@ -123,3 +123,32 @@ setKeyCallback maybeCallback = do
                 hexesAct = keyCall key int keyState modKeys :: Hexes ()
                 readerTMVarHDIO = unwrapHexes hexesAct
                 in runReaderT readerTMVarHDIO var
+
+type HexesCharCallback = Char -> Hexes ()
+
+setCharCallback :: Maybe HexesCharCallback -> Hexes ()
+setCharCallback maybeCallback = do
+    win <- getWindow
+    var <- Hexes $ ask
+    Hexes $ liftIO $ case maybeCallback of
+        Nothing -> GLFW.setCharCallback win Nothing
+        Just charCall -> GLFW.setCharCallback win $ Just $
+            \win char -> let
+                hexesAct = charCall char :: Hexes ()
+                readerTMVarHDIO = unwrapHexes hexesAct
+                in runReaderT readerTMVarHDIO var
+
+-- all these are TODO
+-- setStickyKeysInputMode
+-- setStickyMouseButtonsInputMode
+-- getKey
+-- getMouseButton
+-- getCursorPos
+-- setMouseButtonCallback
+-- setCursorPosCallback
+-- setCursorEnterCallback
+-- setScrollCallback
+-- setDropCallback
+-- getJoystickAxes
+-- getJoystickButtons
+-- setTime

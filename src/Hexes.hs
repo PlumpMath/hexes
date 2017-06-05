@@ -59,21 +59,36 @@ module Hexes (
     setWindowShouldClose,
     pollEvents,
     refresh,
-    
-    -- * Callbacks
-    HexesKeyCallback,
-    setKeyCallback,
-    Key(..),
-    KeyState(..),
-    ModifierKeys(..),
 
     -- * Updates
     V3(..),
     V4(..),
     GLfloat,
+    -- ** Background
     setGridBackground,
+    setBackgroundXY,
+    setBackgroundRC,
+    -- ** Foreground
     setGridForeground,
+    setForegroundXY,
+    setForegroundRC,
+    -- ** TileID
     setGridTileID,
+    setTileIDXY,
+    setTileIDRC,
+    -- ** Char
+    setGridChar,
+    setCharXY,
+    setCharRC,
+    
+    -- * Callbacks
+    HexesCharCallback,
+    setCharCallback,
+    HexesKeyCallback,
+    setKeyCallback,
+    Key(..),
+    KeyState(..),
+    ModifierKeys(..),
 
     -- * Extra
     getRowColCount,

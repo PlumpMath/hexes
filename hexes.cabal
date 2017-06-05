@@ -1,5 +1,5 @@
 name:                hexes
-version:             0.0.1
+version:             0.1.0
 homepage:            https://github.com/Lokathor/hexes
 license:             MIT
 license-file:        LICENSE.txt
@@ -12,6 +12,7 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 -- Assumes Stackage LTS 8.13 or later.
+-- Might work with earlier versions.
 
 library
     hs-source-dirs:     src

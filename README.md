@@ -1,4 +1,4 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) ![Quality:Demo](https://img.shields.io/badge/Quality-Demo-blue.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # Hexes
 
@@ -37,13 +37,8 @@ of tiles out of a tileset you specify.
 
 ## Status
 
-Right now it's just a demo / proof of concept sort of thing. Soon enough it'll
-be able to _actually_ do input and editable output. Right now all it can do is
-show a debug display.
-
-Planned features include:
-
-* Many ways to write to the grid so that grid updates are as easy as possible no
-  matter your needs.
-
-* Potentially making the rendering pipeline more efficient.
+Right now it's un a useable but barebones state. You can poll for keyboard
+events, update the foreground, background, and tileID of any cell within the
+grid, and refresh the grid. This makes it "usable" in a minimal sense, but
+there's more work to be done for sure. Most of the work from here is not hard,
+it's just boilerplate type stuff that's unexciting to do.
