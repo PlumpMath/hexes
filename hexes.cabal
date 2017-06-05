@@ -13,6 +13,7 @@ cabal-version:       >=1.10
 
 -- Assumes Stackage LTS 8.13 or later.
 -- Might work with earlier versions.
+-- The cabal.config will cover you if you're using cabal-install
 
 library
     hs-source-dirs:     src
@@ -47,7 +48,8 @@ executable demo
                         bytestring,
                         JuicyPixels,
                         linear,
-                        file-embed
+                        file-embed,
+                        transformers
     default-language:   Haskell2010
     other-extensions:   TemplateHaskell
     -- ghc-options:        -ddump-splices  -ddump-to-file
