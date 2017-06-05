@@ -39,6 +39,7 @@ windowShouldClose = do
     win <- getWindow
     liftIO $ GLFW.windowShouldClose win
 
+-- | Assigns the GLFW "should close" value for our window.
 setWindowShouldClose :: Bool -> Hexes ()
 setWindowShouldClose b = do
     win <- getWindow
@@ -99,10 +100,7 @@ createWindow = do
 getTime :: Hexes (Maybe Double)
 getTime = Hexes $ liftIO $ GLFW.getTime
 
--- | A callback that will fire after 'pollEvents' if there are user key presses
--- to process. You get the key pressed as an enum, the scancode of the key, the
--- key's event state, and any modifier keys that were being held down at the
--- time of the key event.
+-- | A callback for whenever a key is pressed or released.
 type HexesKeyCallback = GLFW.Key -> Int -> GLFW.KeyState -> GLFW.ModifierKeys -> Hexes ()
 
 -- | Assigns the callback to use for key presses. Only one callback can be set
@@ -124,8 +122,12 @@ setKeyCallback maybeCallback = do
                 readerTMVarHDIO = unwrapHexes hexesAct
                 in runReaderT readerTMVarHDIO var
 
+-- | A callback for when a character gets typed into the window.
 type HexesCharCallback = Char -> Hexes ()
 
+-- | Assigns the callback to use for typed characters. Only one callback can be
+-- set at a time, and if you assign 'Nothing' then it will clear the current
+-- callback selection.
 setCharCallback :: Maybe HexesCharCallback -> Hexes ()
 setCharCallback maybeCallback = do
     win <- getWindow

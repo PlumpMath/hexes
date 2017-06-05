@@ -214,6 +214,8 @@ makeLenses ''VertexEntry
 makeLenses ''CellTriangle
 makeLenses ''CellData
 
+-- TODO: Haddock for the lenses
+
 -- | Converts a CellData into the list of float data you need to push to the
 -- GPU.
 cellDataToList :: CellData -> [GLfloat]
@@ -289,11 +291,15 @@ setCellDataTileID wI hI word (CellData (
             )
         )
 
+-- | Updates a CellData value to have a new background color without making any
+-- other changes to the CellData.
 setCellDataBackground :: V3 GLfloat -> CellData -> CellData
 setCellDataBackground newBG cell = let
     bgPath = cellData.each.cellTriangle.each.vertexEntry._3
     in cell & bgPath .~ newBG
 
+-- | Updates a CellData value to have a new foreground color without making any
+-- other changes to the CellData.
 setCellDataForeground :: V4 GLfloat -> CellData -> CellData
 setCellDataForeground newFG cell = let
     bgPath = cellData.each.cellTriangle.each.vertexEntry._4

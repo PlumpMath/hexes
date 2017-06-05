@@ -165,6 +165,7 @@ refresh = do
     -- End by swapping the buffers.
     swapBuffers
 
+-- | Converts a row col pair into an index into the verticies vector.
 rc2i :: Int -> Int -> Hexes Int
 rc2i row col = do
     (rows,cols) <- getRowColCount
@@ -172,6 +173,7 @@ rc2i row col = do
         col' = col `mod` cols
     return $ col' + row' *cols
 
+-- | Converts an x y pair into an index into the verticies vector.
 xy2i :: Int -> Int -> Hexes Int
 xy2i x y = do
     (rows,cols) <- getRowColCount
@@ -179,11 +181,13 @@ xy2i x y = do
         col' = x `mod` cols
     return $ col' + row' * cols
 
+-- | Sets the background color for the entire grid.
 setGridBackground :: V3 GLfloat -> Hexes ()
 setGridBackground bg = do
     v <- getVerticies
     setVerticies (VS.map (setCellDataBackground bg) v)
 
+-- | Sets the background color for the XY cell specified.
 setBackgroundXY :: V3 GLfloat -> Int -> Int -> Hexes ()
 setBackgroundXY bg x y = do
     i <- xy2i x y
@@ -191,6 +195,7 @@ setBackgroundXY bg x y = do
     let newCell = setCellDataBackground bg (v ! i)
     setVerticies (v // [(i,newCell)])
 
+-- | Sets the background color for the RowCol cell specified.
 setBackgroundRC :: V3 GLfloat -> Int -> Int -> Hexes ()
 setBackgroundRC bg r c = do
     i <- rc2i r c
@@ -198,11 +203,13 @@ setBackgroundRC bg r c = do
     let newCell = setCellDataBackground bg (v ! i)
     setVerticies (v // [(i,newCell)])
 
+-- | Sets the foreground color for the entire grid.
 setGridForeground :: V4 GLfloat -> Hexes ()
 setGridForeground fg = do
     v <- getVerticies
     setVerticies (VS.map (setCellDataForeground fg) v)
 
+-- | Sets the foreground color for the XY cell specified.
 setForegroundXY :: V4 GLfloat -> Int -> Int -> Hexes ()
 setForegroundXY fg x y = do
     i <- xy2i x y
@@ -210,6 +217,7 @@ setForegroundXY fg x y = do
     let newCell = setCellDataForeground fg (v ! i)
     setVerticies (v // [(i,newCell)])
 
+-- | Sets the foreground color for the RowCol cell specified.
 setForegroundRC :: V4 GLfloat -> Int -> Int -> Hexes ()
 setForegroundRC fg r c = do
     i <- rc2i r c
@@ -217,12 +225,14 @@ setForegroundRC fg r c = do
     let newCell = setCellDataForeground fg (v ! i)
     setVerticies (v // [(i,newCell)])
 
+-- | Sets the entire grid's tile ID.
 setGridTileID :: Word8 -> Hexes ()
 setGridTileID tid = do
     v <- getVerticies
     (wI,hI) <- getCellWidthHeight
     setVerticies (VS.map (setCellDataTileID wI hI tid) v)
 
+-- | Sets the tileID of the XY specified.
 setTileIDXY :: Word8 -> Int -> Int -> Hexes ()
 setTileIDXY tid x y = do
     i <- xy2i x y
@@ -231,6 +241,7 @@ setTileIDXY tid x y = do
     let newCell = setCellDataTileID wI hI tid (v ! i)
     setVerticies (v // [(i,newCell)])
 
+-- | Sets the tileID of the RowCol specified.
 setTileIDRC :: Word8 -> Int -> Int -> Hexes ()
 setTileIDRC tid r c = do
     i <- rc2i r c
@@ -239,12 +250,15 @@ setTileIDRC tid r c = do
     let newCell = setCellDataTileID wI hI tid (v ! i)
     setVerticies (v // [(i,newCell)])
 
+-- | Sets the tileID of the entire grid by character
 setGridChar :: Char -> Hexes ()
 setGridChar c = setGridTileID (fromIntegral $ ord c)
 
+-- | Sets the tileID of the XY specified, by character
 setCharXY :: Char -> Int -> Int -> Hexes ()
 setCharXY c x y = setTileIDXY (fromIntegral $ ord c) x y
 
+-- | Sets the tileID of the RowCol specified, by character
 setCharRC :: Char -> Int -> Int -> Hexes ()
 setCharRC ch r c = setTileIDRC (fromIntegral $ ord ch) r c
 
