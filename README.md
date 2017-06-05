@@ -37,7 +37,7 @@ of tiles out of a tileset you specify.
 
 ## Status
 
-Right now it's un a useable but barebones state. You can poll for keyboard
+Right now it's in a useable but barebones state. You can poll for keyboard
 events, update the foreground, background, and tileID of any cell within the
 grid, and refresh the grid. This makes it "usable" in a minimal sense, but
 there's more work to be done for sure. Most of the work from here is not hard,
