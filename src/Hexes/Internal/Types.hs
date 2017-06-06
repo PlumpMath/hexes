@@ -8,7 +8,7 @@ module Hexes.Internal.Types where
 
 -- base
 import Control.Applicative (liftA2)
-import Control.Concurrent.MVar
+import Data.IORef
 import Data.Word
 import Debug.Trace
 import Foreign.Storable
@@ -98,7 +98,7 @@ mkState rows cols img = let
         else trace ("WARNING: Image has spare pixel height: "++show heightSpare) cellHeight,
     window = undefined,
     shaderProgram = 0,
-    verticies=undefined,
+    verticies=VS.fromList [],
     theVAO=0,
     theVBO=0
     }
@@ -108,35 +108,33 @@ mkState rows cols img = let
 -- be rendered to the screen, similar to how curses works. Or, how it might work
 -- if it was much easier to use at least.
 --
--- Though this is a MonadIO newtype, it is *not* suggested to call any 'GLFW' or
--- 'gl' code from within this monad yourself. Anything you should be interacting
--- with from those packages is already provided to you as a 'Hexes' action
--- instead. If you make your own calls to 'GLFW' or 'gl' from within a 'Hexes'
--- action and something gets messed up, that's your fault.
---
--- Thread Safety: The Hexes data is kept in an MVar, so you can potentially use
--- Hexes in more than one thread at once. However, there's no way to batch up a
--- transaction, and also the 'refresh' call should only be made from the main
--- thread anyway.
-newtype Hexes a = Hexes (ReaderT (MVar HexesData) IO a)
+-- Though this is a MonadIO newtype, it is *not* suggested to call any 'GLFW-b'
+-- or 'gl' code from within this monad yourself. Anything you should be doing
+-- using those packages is already provided to you as a 'Hexes' action instead.
+-- Or <https://github.com/Lokathor/hexes/issues file an issue> on the git repo.
+-- That said, you're probably an adult, so you can use the Internals modules to
+-- cut past the abstraction here and just do what you want if you really need
+-- to.
+newtype Hexes a = Hexes (ReaderT (IORef HexesData) IO a)
     deriving (Functor, Applicative, Monad, MonadIO)
 
 -- | Unwraps a Hexes back into its non-newtype form. Since Hexes is a newtype,
 -- this actually compiles away into nothing. It's just for type juggling.
-unwrapHexes :: Hexes a -> ReaderT (MVar HexesData) IO a
+unwrapHexes :: Hexes a -> ReaderT (IORef HexesData) IO a
 unwrapHexes (Hexes action) = action
 
 -- | Looks into the HexesState for whatever you're after.
 hexGets :: (HexesData -> a) -> Hexes a
 hexGets projectFunc = Hexes $ do
-    var <- ask
-    liftIO $ withMVar var (\hexesData -> return $ projectFunc hexesData)
+    ref <- ask
+    hexesData <- liftIO $ readIORef ref
+    return $ projectFunc hexesData
 
 -- | Modifies the HexesState however you like.
 hexModify :: (HexesData -> HexesData) -> Hexes ()
 hexModify modifyFunc = Hexes $ do
-    var <- ask
-    liftIO $ modifyMVar_ var (\hexesData -> return $ modifyFunc hexesData)
+    ref <- ask
+    liftIO $ atomicModifyIORef' ref (\hexesState -> (modifyFunc hexesState,()))
 
 -- | Obtains the 'GLFW.Window' for the current Hexes context.
 getWindow :: Hexes GLFW.Window

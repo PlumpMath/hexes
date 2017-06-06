@@ -15,7 +15,7 @@ import Hexes.Internal.GLFW
 import Hexes.Internal.Shader
 
 -- base
-import Control.Concurrent.MVar
+import Data.IORef
 import Data.Char (ord)
 import Foreign
 import Foreign.C.String
@@ -37,14 +37,16 @@ import Linear
 
 -- | You specify the number of rows, number of cols, the Image to use as the
 -- tilemap, and a Hexes action, and this will turn it into an IO action. This
--- uses opengl, and so it should only be called from the main thread. Also, you
--- should not use liftIO to call runHexes inside of a Hexes block. That would
--- probably end in a bad time.
+-- uses GLFW and opengl, and so it should only be called from the main thread.
+-- Also, you should /not/ use liftIO to call runHexes inside of a Hexes block.
+-- That would probably end in a bad time.
+--
+-- __Thread Safety:__ Main thread only.
 runHexes :: Int -> Int -> Image PixelRGBA8 -> Hexes () -> IO ()
 runHexes rows cols img userAction = bracketGLFW $ do
     GLFW.setErrorCallback (Just $ \error msg -> print error >> putStrLn msg)
-    hexesStateMVar <- newMVar (mkState rows cols img)
-    flip runReaderT hexesStateMVar $ unwrapHexes $ do
+    hexesStateIORef <- newIORef (mkState rows cols img)
+    flip runReaderT hexesStateIORef $ unwrapHexes $ do
         -- If it's not entirely clear: this is a Hexes do-block, and also GLFW
         -- is safely enabled during this block.
 
@@ -137,6 +139,8 @@ runHexes rows cols img userAction = bracketGLFW $ do
 
 -- | Refreshes the window with the current state of the Hexes computation. This
 -- uses opengl, and so it should only be called from the main thread.
+--
+-- __Thread Safety:__ Main thread only.
 refresh :: Hexes ()
 refresh = do
     -- clear any old data

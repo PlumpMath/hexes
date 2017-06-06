@@ -25,10 +25,7 @@ of tiles out of a tileset you specify.
 
 * User input comes from [GLFW-b](https://hackage.haskell.org/package/GLFW-b), so
   you just set your callbacks and then use `pollEvents` at the start of each run
-  through the main loop. Note that `pollEvents` is actually a foreign call, with
-  all the troubles that implies, and so your callbacks are only _scheduled_ by
-  it, then they are run by the normal GHC runtime once `pollEvents` returns,
-  without the trouble of being locked inside a foreign call.
+  through the main loop.
 
 * Rendering is done by [gl](https://hackage.haskell.org/package/gl), but you
   don't touch any of that yourself. Instead you just set the data for each cell

@@ -51,14 +51,25 @@
 -- things in Quadrant 1 of a Cartesian Grid.
 --
 -- * In both cases, Column and X increase as you move from left to right.
+--
+-- =Thread Safety
+--
+-- The core elements of this library are fundamentally __not__ thread safe.
+-- Because of the reliance on GLFW and opengl, the event polling and screen
+-- refresh should only be called from the main thread. Unfortunately that's just
+-- the nature of bindings libraries, and there's not really a way that the main
+-- thread limitation can be worked around.
 module Hexes (
     -- * Core
     Hexes(),
     runHexes,
-    windowShouldClose,
-    setWindowShouldClose,
     pollEvents,
     refresh,
+    windowShouldClose,
+    setWindowShouldClose,
+    getRowColCount,
+    getCellWidthHeight,
+    getTime,
 
     -- * Updates
     V3(..),
@@ -82,24 +93,24 @@ module Hexes (
     setCharRC,
     
     -- * Callbacks
+    -- ** Char Callback
     HexesCharCallback,
     setCharCallback,
+    -- ** Key Callback
     HexesKeyCallback,
     setKeyCallback,
     Key(..),
     KeyState(..),
-    ModifierKeys(..),
-
-    -- * Extra
-    getRowColCount,
-    getCellWidthHeight,
-    getTime
+    ModifierKeys(..)
     ) where
 
 import Hexes.Internal
 import Hexes.Internal.Types
 import Hexes.Internal.GLFW
 import Hexes.Internal.Shader
+
+import Data.Char (ord)
+import Data.Word (Word8)
 
 import Graphics.UI.GLFW (Key(..), KeyState(..), ModifierKeys(..))
 
@@ -112,3 +123,5 @@ import Graphics.GL.Types
 -- TODO: Callbacks to gather more input types
 
 -- TODO: More actions to write output to the grid.
+
+-- TODO: Get background, foreground, and tileid.

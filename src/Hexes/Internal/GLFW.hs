@@ -36,28 +36,38 @@ glfwDefaultHints = Hexes $ liftIO $ do
     GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
 
 -- | Obtains the "window should close" value of the Hexes window.
+--
+-- __Thread Safety:__ Any thread, but access is not synchronized.
 windowShouldClose :: Hexes Bool
 windowShouldClose = do
     win <- getWindow
     liftIO $ GLFW.windowShouldClose win
 
--- | Assigns the GLFW "should close" value for our window.
+-- | Assigns the "window should close" value of the Hexes window.
+--
+-- __Thread Safety:__ Any thread, but access is not synchronized.
 setWindowShouldClose :: Bool -> Hexes ()
 setWindowShouldClose b = do
     win <- getWindow
     liftIO $ GLFW.setWindowShouldClose win b
 
--- | Causes the GLFW window system to poll for events. This is a foreign call,
--- so it's uninterruptable until it completes. However, @pollEvents@ does not
--- directly execute your callbacks while within the foreign call. Instead it
--- only schedules each of your callbacks to be executed within the normal GHC
--- runtime once this call returns.
+-- | Causes the GLFW window system to poll for events. Part of this process is a
+-- foreign call, so it's uninterruptable during that portion. However,
+-- @GLFW-b@ does not directly execute your callbacks while within the foreign
+-- portion of the call. Instead, it only schedules each of your callbacks to be
+-- executed, and they they are executed within the normal GHC runtime once the
+-- foreign portion of the call returns.
+--
+-- __Thread Safety:__ Main thread only.
 pollEvents :: Hexes ()
 pollEvents = liftIO $ GLFW.pollEvents
 
 -- TODO: Offer waitEvents and postEmptyEvent as well.
 
 -- | Swaps the foreground and background framebuffer.
+--
+-- __Thread Safety:__ Any thread when used on its own, but the OpenGL drawing
+-- that you probably do before this is main only.
 swapBuffers :: Hexes ()
 swapBuffers = do
     win <- getWindow
@@ -75,6 +85,8 @@ escapeCallback window key scanCode keyState modKeys = do
 
 -- | Creates our GLFW Window. If successful, also makes its context the current
 -- context and adjusts the 'glViewport' to match the window's framebuffer size.
+--
+-- __Thread Safety:__ Main thread only.
 createWindow :: Hexes Bool
 createWindow = do
     (rows,cols) <- getRowColCount
@@ -99,6 +111,8 @@ createWindow = do
 
 -- | Obtains GLFW's timer value. This is in seconds, and is the amount of time
 -- since GLFW was initialized. This can be safely used from any thread.
+--
+-- __Thread Safety:__ Any thread, but access is not synchronized.
 getTime :: Hexes (Maybe Double)
 getTime = Hexes $ liftIO $ GLFW.getTime
 
@@ -108,6 +122,8 @@ type HexesKeyCallback = GLFW.Key -> Int -> GLFW.KeyState -> GLFW.ModifierKeys ->
 -- | Assigns the callback to use for key presses. Only one callback can be set
 -- at a time, and if you assign 'Nothing' then it will clear the current
 -- callback selection.
+--
+-- __Thread Safety:__ Main thread only.
 setKeyCallback :: Maybe HexesKeyCallback -> Hexes ()
 setKeyCallback maybeCallback = do
     -- We need to intercept the window argument of the GLFW.KeyCallback so the
@@ -115,14 +131,14 @@ setKeyCallback maybeCallback = do
     -- an IO () values, so we need to pass down our MVar and run a
     -- sub-computation. All of the MVar's changes are synchronized so it's fine.
     win <- getWindow
-    var <- Hexes $ ask
+    ref <- Hexes $ ask
     Hexes $ liftIO $ case maybeCallback of
         Nothing -> GLFW.setKeyCallback win Nothing
         Just keyCall -> GLFW.setKeyCallback win $ Just $
             \win key int keyState modKeys -> let
                 hexesAct = keyCall key int keyState modKeys :: Hexes ()
-                readerTMVarHDIO = unwrapHexes hexesAct
-                in runReaderT readerTMVarHDIO var
+                readerTthing = unwrapHexes hexesAct
+                in runReaderT readerTthing ref
 
 -- | A callback for when a character gets typed into the window.
 type HexesCharCallback = Char -> Hexes ()
@@ -130,17 +146,19 @@ type HexesCharCallback = Char -> Hexes ()
 -- | Assigns the callback to use for typed characters. Only one callback can be
 -- set at a time, and if you assign 'Nothing' then it will clear the current
 -- callback selection.
+--
+-- __Thread Safety:__ Main thread only.
 setCharCallback :: Maybe HexesCharCallback -> Hexes ()
 setCharCallback maybeCallback = do
     win <- getWindow
-    var <- Hexes $ ask
+    ref <- Hexes $ ask
     Hexes $ liftIO $ case maybeCallback of
         Nothing -> GLFW.setCharCallback win Nothing
         Just charCall -> GLFW.setCharCallback win $ Just $
             \win char -> let
                 hexesAct = charCall char :: Hexes ()
-                readerTMVarHDIO = unwrapHexes hexesAct
-                in runReaderT readerTMVarHDIO var
+                readerTthing = unwrapHexes hexesAct
+                in runReaderT readerTthing ref
 
 -- all these are TODO
 -- setStickyKeysInputMode
