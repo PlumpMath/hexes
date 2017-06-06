@@ -80,7 +80,8 @@ data HexesData = HexesData {
 -- and OGL are already pretty finnicky on thread safety as it is.
 
 -- | Danger! This just lets you fill in the record as you go. You still need to
--- fill in the whole record before you start using it.
+-- fill in the whole record before you start using it. Particularly, the window
+-- doesn't even have a good dummy value, it's just undefined.
 mkState :: Int -> Int -> Image PixelRGBA8 -> HexesData
 mkState rows cols img = let
     iWidth = imageWidth img
@@ -103,18 +104,18 @@ mkState rows cols img = let
     theVBO=0
     }
 
--- | A Hexes computation is one that wraps up whole a lot of 'GLFW' and 'gl'
+-- | A Hexes computation is one that wraps up whole a lot of @GLFW-b@ and @gl@
 -- activity so that you can easily manipulate a grid of characters and have it
 -- be rendered to the screen, similar to how curses works. Or, how it might work
 -- if it was much easier to use at least.
 --
--- Though this is a MonadIO newtype, it is *not* suggested to call any 'GLFW-b'
--- or 'gl' code from within this monad yourself. Anything you should be doing
--- using those packages is already provided to you as a 'Hexes' action instead.
--- Or <https://github.com/Lokathor/hexes/issues file an issue> on the git repo.
--- That said, you're probably an adult, so you can use the Internals modules to
--- cut past the abstraction here and just do what you want if you really need
--- to.
+-- Though this is a MonadIO newtype, it is __not__ suggested to call any
+-- @GLFW-b@ or @gl@ code from within this monad yourself. Anything you should be
+-- doing using those packages is already provided to you as a 'Hexes' action
+-- instead. Or <https://github.com/Lokathor/hexes/issues file an issue> on the
+-- git repo. That said, you're probably an adult, so you can use the Internals
+-- modules to cut past the abstraction here and just do what you want if you
+-- really need to.
 newtype Hexes a = Hexes (ReaderT (IORef HexesData) IO a)
     deriving (Functor, Applicative, Monad, MonadIO)
 
@@ -145,10 +146,14 @@ setWindow :: GLFW.Window -> Hexes ()
 setWindow newWindow = hexModify (\s -> s {window=newWindow})
 
 -- | Gets the number of rows and cols that we're using.
+--
+-- __Thread Safety:__ Any thread.
 getRowColCount :: Hexes (Int,Int)
 getRowColCount = hexGets $ liftA2 (,) rowCount colCount
 
 -- | Gets the width and height of the display cells that we're using.
+--
+-- __Thread Safety:__ Any thread.
 getCellWidthHeight :: Hexes (Int,Int)
 getCellWidthHeight = hexGets $ liftA2 (,) cellWidth cellHeight
 
@@ -259,6 +264,10 @@ setCellDataTileID :: Int -> Int -> Word8 -> CellData -> CellData
 -- that we can write this whole function as just foo :: Word8 -> CellData ->
 -- CellData and then expose it to the user. Maybe the user could perform their
 -- own maps and such and get stream fusion going?
+--
+-- TODO AGAIN: maybe cell size can be set as a uniform for the shader so that we
+-- just store the index of the tile in the vertex entry and then compute the
+-- (s,t) value within the shader?
 setCellDataTileID wI hI word (CellData (
         CellTriangle (
                 VertexEntry (xy1, _, bg1, fg1),

@@ -45,16 +45,17 @@ import Linear
 runHexes :: Int -> Int -> Image PixelRGBA8 -> Hexes () -> IO ()
 runHexes rows cols img userAction = bracketGLFW $ do
     GLFW.setErrorCallback (Just $ \error msg -> print error >> putStrLn msg)
-    hexesStateIORef <- newIORef (mkState rows cols img)
-    flip runReaderT hexesStateIORef $ unwrapHexes $ do
+    hexesDataIORef <- newIORef (mkState rows cols img)
+    flip runReaderT hexesDataIORef $ unwrapHexes $ do
         -- If it's not entirely clear: this is a Hexes do-block, and also GLFW
         -- is safely enabled during this block.
 
-        -- Creates our window and stores it into the HexesState. This also
+        -- Creates our window and stores it into the HexesData. This also
         -- initializes our gl context and glViewport to match the window. The
         -- Bool we get back is if that was all successful or not, but right now
         -- there's really no error handling.
         _success <- createWindow
+        -- TODO: Error handling here
 
         -- set clear color
         glClearColor 0.2 0.3 0.3 1.0
